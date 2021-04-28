@@ -67,7 +67,7 @@ function startRound():void {
         if (deck.length <= 0) break;
     }
 
-    // start the turns if not currently human's turn
+    // start the turn timer if not currently human's turn
     if (turnIndex == 0) onPlayerTurn();
     else turnDelayTimer = window.setInterval(onPlayerTurn, TURN_DELAY);
 

@@ -55,6 +55,10 @@ export default abstract class Player {
         return this._hand;
     }
 
+    public get cardCount():number {
+        return this._hand.length;
+    }
+
     public get state():number {
         return this._state;
     }

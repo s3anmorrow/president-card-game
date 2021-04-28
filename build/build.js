@@ -10295,11 +10295,11 @@ class ComputerPlayer extends Player_1.default {
         return count;
     }
     pass() {
-        this.cursor.x = 290;
-        this.cursor.y = 192;
-        this.stage.addChild(this.cursor);
+        this.cursor.x = 77;
+        this.cursor.y = 58;
+        this.table.playSpot.addChild(this.cursor);
         this.cursorDelayTimer = window.setTimeout(() => {
-            this.stage.removeChild(this.cursor);
+            this.table.playSpot.removeChild(this.cursor);
         }, Constants_1.TURN_DELAY - 250);
     }
     takeTurn() {
@@ -10371,7 +10371,12 @@ class ComputerPlayer extends Player_1.default {
                 }
             }
             else {
-                this.pass();
+                if (twoCount > 0) {
+                    this._selectedCards = this._hand.slice(0, 1);
+                }
+                else {
+                    this.pass();
+                }
             }
         }
         console.log("Computer's selected cards:");
@@ -10667,6 +10672,9 @@ class Player {
     }
     get hand() {
         return this._hand;
+    }
+    get cardCount() {
+        return this._hand.length;
     }
     get state() {
         return this._state;
@@ -10972,7 +10980,7 @@ exports.pointHit = pointHit;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /Users/seanmorrow/OneDrive - Nova Scotia Community College/_workspace/_working/president/node_modules/webpack-dev-server/client/index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
+__webpack_require__(/*! D:\OneDrive - Nova Scotia Community College\_workspace\_working\president-card-game\node_modules\webpack-dev-server\client\index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
 module.exports = __webpack_require__(/*! ./src/Game.ts */"./src/Game.ts");
 
 

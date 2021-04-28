@@ -27,11 +27,11 @@ export default class ComputerPlayer extends Player {
 
     private pass():void {
         // add pass cursor to stage for a limited time
-        this.cursor.x = 290;
-        this.cursor.y = 192;
-        this.stage.addChild(this.cursor);
+        this.cursor.x = 77;
+        this.cursor.y = 58;
+        this.table.playSpot.addChild(this.cursor);
         this.cursorDelayTimer = window.setTimeout(() => {
-            this.stage.removeChild(this.cursor);
+            this.table.playSpot.removeChild(this.cursor);
         }, TURN_DELAY - 250);
     }
 
@@ -126,14 +126,13 @@ export default class ComputerPlayer extends Player {
                     this._selectedCards = playableCards.slice(0, playedCount);
                 } 
             } else {
-                // // no playable cards to play
-                // if (twoCount > 0){
-                //     // drop two to clear board
-                //     this._selectedCards = this._hand.slice(0, 1);
-                // } else {
+                // no playable cards to play - drop twos or pass
+                if (twoCount > 0){
+                    // drop two to clear board
+                    this._selectedCards = this._hand.slice(0, 1);
+                } else {
                     this.pass();
-                    // return;
-                // }
+                }
             }
         }       
 
