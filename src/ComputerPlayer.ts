@@ -36,7 +36,7 @@ export default class ComputerPlayer extends Player {
     }
 
     // ---------------------------------------------- public methods
-    public takeTurn():number  {
+    public selectCards():void  {
         // INTELLIGENCE GATHERING
         // number of cards that signifies a low card count
         const LOW_CARD_THRESHOLD:number = 4;
@@ -127,7 +127,7 @@ export default class ComputerPlayer extends Player {
                 } 
             } else {
                 // no playable cards to play - drop twos or pass
-                if (twoCount > 0){
+                if ((twoCount > 0) && (probabilityMe(60))) {
                     // drop two to clear board
                     this._selectedCards = this._hand.slice(0, 1);
                 } else {
@@ -136,11 +136,8 @@ export default class ComputerPlayer extends Player {
             }
         }       
 
-        console.log("Computer's selected cards:");
-        console.log(this._selectedCards);
-
         // do rest of work in superclass takeTurn()
-        return super.takeTurn();
+        super.selectCards();
     }
 
 }

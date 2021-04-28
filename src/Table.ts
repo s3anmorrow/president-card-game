@@ -15,11 +15,14 @@ export default class Table {
     private _playerStartingRound:Player;
     private _playedCards:Card[];
     private _playSpot:createjs.Container;
+    private _playersOut:Player[];
 
     constructor(stage:createjs.StageGL, assetManager:AssetManager) {
         // initialization
         this.stage = stage;
+        this._playerStartingRound = null;
         this._playedCards = [];
+        this._playersOut = [];
 
         // construct background sprite
         let background:createjs.Sprite = assetManager.getSprite("sprites","screens/background",0,0);
@@ -59,7 +62,7 @@ export default class Table {
                 this.turnPointer.y = 100;
                 break;
             case Player.ORIENTATION_LEFT:
-                this.turnPointer.x = 10;
+                this.turnPointer.x = 100;
                 this.turnPointer.y = 150;
                 break;
             case Player.ORIENTATION_RIGHT:
@@ -81,21 +84,27 @@ export default class Table {
         return this._playedCards;
     }
 
+    public get playersOut():Player[] {
+        return this._playersOut;
+    }
+
     // -------------------------------------------- public methods
-    // public reset():void {
-    //     this.clearTable();
-    //     this._playedCards = [];
-    // }
+    public reset():void {
+        this.clearTable();
+        this._playersOut = [];
+        this._playerStartingRound = null;
+
+
+    }
 
     public clearTable():void {
+        console.log("CLEARING TABLE");
         this._playedCards.forEach(card => card.hideMe());
         this._playedCards = [];
+        this._playerStartingRound = null;
     }
 
     public playCards():number {
-        // keeping track of player that is starting the round
-        this._playerStartingRound = this._player;
-
         // isolating player's selected cards about to be played
         let selectedCards:Card[] = this._player.selectedCards;
 
@@ -104,9 +113,13 @@ export default class Table {
         if (selectedCards.length == 0) playType = Player.PLAYED_PASS;
         else if (selectedCards[0].rank == 2) playType = Player.PLAYED_TWO;
 
-        // only need to position 
-        if (playType == Player.PLAYED_CARD) {
-            this.clearTable();
+        if ((playType == Player.PLAYED_CARD) || (this._playerStartingRound == null)) {
+            // keeping track of player that is starting the round
+            this._playerStartingRound = this._player;
+        }
+        if (playType != Player.PLAYED_PASS) {
+            // hide cards underneath
+            this._playedCards.forEach(card => card.hideMe());
             // selected cards are now officially the played cards
             this._playedCards = selectedCards;
 
@@ -117,11 +130,18 @@ export default class Table {
                 card.playMe();
                 dropSpotX = dropSpotX + PLAYER_CARD_SPREAD;
             });
-        } else if (playType == Player.PLAYED_TWO) {
-            this.clearTable();
-        } else {
-            console.log(":( Player Passed");
+        }
+          
+        // check if player is out of round
+        if (this._player.hand.length == 0) {
+            this._player.state = Player.STATE_OUT;
+            // add player to list of out players
+            this._playersOut.push(this._player);
 
+            // ?????????????????
+            // set to null to indicate next player is starting round player
+            console.log("*** PLAYER OUT");
+            this._playerStartingRound = null;
         }
 
         return playType;

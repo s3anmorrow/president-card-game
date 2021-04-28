@@ -53,6 +53,7 @@ export default class HumanPlayer extends Player {
             // player has made a selection for his/her turn
             this.disableMe();
         } else if (this._state == Player.STATE_CARDS_NOT_SELECTED) {
+            this._selectedCards = [];
             // human player is passing
             this.disableMe();
         }
