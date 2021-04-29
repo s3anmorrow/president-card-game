@@ -389,21 +389,6 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
-            <key type="filename">icons/turnPointer.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>0,0</point_f>
-                <key>spriteScale</key>
-                <double>1</double>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>10,10,20,20</rect>
-                <key>scale9Paddings</key>
-                <rect>10,10,20,20</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
             <key type="filename">screens/background.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
@@ -482,7 +467,7 @@
             <key type="filename">screens/table.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
-                <point_f>0,0</point_f>
+                <point_f>0.5,0.5</point_f>
                 <key>spriteScale</key>
                 <double>1</double>
                 <key>scale9Enabled</key>
@@ -491,6 +476,21 @@
                 <rect>80,48,161,96</rect>
                 <key>scale9Paddings</key>
                 <rect>80,48,161,96</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">screens/turnMarker.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>spriteScale</key>
+                <double>1</double>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>8,8,15,15</rect>
+                <key>scale9Paddings</key>
+                <rect>8,8,15,15</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>

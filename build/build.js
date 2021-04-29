@@ -10785,12 +10785,12 @@ class Table {
         background.scaleX = Constants_1.STAGE_WIDTH;
         background.scaleY = Constants_1.STAGE_HEIGHT;
         stage.addChild(background);
-        this.sprite = assetManager.getSprite("sprites", "screens/table", 142, 110);
+        this.sprite = assetManager.getSprite("sprites", "screens/table", 300, 200);
         this.stage.addChild(this.sprite);
-        this.turnPointer = assetManager.getSprite("sprites", "icons/turnPointer", 0, 0);
-        this.stage.addChild(this.turnPointer);
+        this.turnMarker = assetManager.getSprite("sprites", "screens/turnMarker", 0, 0);
+        this.stage.addChild(this.turnMarker);
         this._playSpot = new createjs.Container();
-        this._playSpot.x = 212;
+        this._playSpot.x = 220;
         this._playSpot.y = 133;
         let playSpotBackground = assetManager.getSprite("sprites", "screens/playSpot", 0, 0);
         this._playSpot.addChild(playSpotBackground);
@@ -10800,20 +10800,24 @@ class Table {
         this._player = value;
         switch (this._player.orientation) {
             case Player_1.default.ORIENTATION_BOTTOM:
-                this.turnPointer.x = 300;
-                this.turnPointer.y = 300;
+                this.turnMarker.rotation = 0;
+                this.turnMarker.x = 300;
+                this.turnMarker.y = 400;
                 break;
             case Player_1.default.ORIENTATION_TOP:
-                this.turnPointer.x = 300;
-                this.turnPointer.y = 100;
+                this.turnMarker.rotation = 180;
+                this.turnMarker.x = 300;
+                this.turnMarker.y = 0;
                 break;
             case Player_1.default.ORIENTATION_LEFT:
-                this.turnPointer.x = 100;
-                this.turnPointer.y = 150;
+                this.turnMarker.rotation = 90;
+                this.turnMarker.x = -10;
+                this.turnMarker.y = 225;
                 break;
             case Player_1.default.ORIENTATION_RIGHT:
-                this.turnPointer.x = 450;
-                this.turnPointer.y = 150;
+                this.turnMarker.rotation = 270;
+                this.turnMarker.x = 610;
+                this.turnMarker.y = 225;
                 break;
         }
     }
@@ -11011,7 +11015,7 @@ exports.pointHit = pointHit;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! D:\OneDrive - Nova Scotia Community College\_workspace\_working\president-card-game\node_modules\webpack-dev-server\client\index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
+__webpack_require__(/*! /Users/seanmorrow/OneDrive - Nova Scotia Community College/_workspace/_working/president-card-game/node_modules/webpack-dev-server/client/index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
 module.exports = __webpack_require__(/*! ./src/Game.ts */"./src/Game.ts");
 
 

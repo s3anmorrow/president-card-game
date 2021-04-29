@@ -9,7 +9,7 @@ export default class Table {
 
     private stage:createjs.StageGL;
     private sprite:createjs.Sprite;    
-    private turnPointer:createjs.Sprite;
+    private turnMarker:createjs.Sprite;
 
     private _player:Player;
     private _playerStartingRound:Player;
@@ -31,16 +31,16 @@ export default class Table {
         stage.addChild(background);   
         
         // table sprites
-        this.sprite = assetManager.getSprite("sprites", "screens/table", 142, 110);
+        this.sprite = assetManager.getSprite("sprites", "screens/table", 300, 200);
         this.stage.addChild(this.sprite);
 
         // turn pointer
-        this.turnPointer = assetManager.getSprite("sprites","icons/turnPointer",0,0);
-        this.stage.addChild(this.turnPointer);
+        this.turnMarker = assetManager.getSprite("sprites","screens/turnMarker",0,0);
+        this.stage.addChild(this.turnMarker);
 
         // playspot where players drop cards
         this._playSpot = new createjs.Container();
-        this._playSpot.x = 212;
+        this._playSpot.x = 220;
         this._playSpot.y = 133;
         let playSpotBackground:createjs.Sprite = assetManager.getSprite("sprites", "screens/playSpot", 0, 0);
         this._playSpot.addChild(playSpotBackground);
@@ -54,20 +54,24 @@ export default class Table {
         // adjust turn pointer
         switch (this._player.orientation){
             case Player.ORIENTATION_BOTTOM:
-                this.turnPointer.x = 300;
-                this.turnPointer.y = 300;
+                this.turnMarker.rotation = 0;
+                this.turnMarker.x = 300;
+                this.turnMarker.y = 400;
                 break;
             case Player.ORIENTATION_TOP:
-                this.turnPointer.x = 300;
-                this.turnPointer.y = 100;
+                this.turnMarker.rotation = 180;
+                this.turnMarker.x = 300;
+                this.turnMarker.y = 0;
                 break;
             case Player.ORIENTATION_LEFT:
-                this.turnPointer.x = 100;
-                this.turnPointer.y = 150;
+                this.turnMarker.rotation = 90;
+                this.turnMarker.x = -10;
+                this.turnMarker.y = 225;
                 break;
             case Player.ORIENTATION_RIGHT:
-                this.turnPointer.x = 450;
-                this.turnPointer.y = 150;
+                this.turnMarker.rotation = 270;
+                this.turnMarker.x = 610;
+                this.turnMarker.y = 225;
                 break;            
         }
     }
@@ -137,12 +141,18 @@ export default class Table {
             this._player.state = Player.STATE_OUT;
             // add player to list of out players
             this._playersOut.push(this._player);
-
-            // ?????????????????
             // set to null to indicate next player is starting round player
             console.log("*** PLAYER OUT");
             this._playerStartingRound = null;
+
+            // is this player the human?
+            // ????????????????? speed up game
         }
+
+        // check if all but one player out of round
+        // ???? flip over cards and end round
+
+        
 
         return playType;
     }
