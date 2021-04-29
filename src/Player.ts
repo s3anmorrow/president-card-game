@@ -75,7 +75,11 @@ export default abstract class Player {
 
     public get status():number {
         return this._status;
-    }    
+    } 
+    
+    public set status(value:number) {
+        this._status = value;
+    }
 
     public set orientation(value:number) {
         this._orientation = value;
@@ -102,15 +106,16 @@ export default abstract class Player {
         this.table.refreshCards(this);
 	}
 
+    public revealCards():void {
+        this._hand.forEach(card => card.showFaceUp());
+    }
+
     public returnCards(deck:Card[]):void {
         for (let card of this._hand) deck.push(card);
         this._hand = [];
     }
 
     public selectCards():void {
-        // // play the selected cards onto the table
-        // let playType:number = this.table.playCards();
-        
         // remove played cards from hand
         this._selectedCards.forEach(selectedCard => {
             let index:number = this._hand.findIndex(card => card == selectedCard);
@@ -122,18 +127,15 @@ export default abstract class Player {
                 
         // reposition the cards now that cards have been played
         this.table.refreshCards(this);
-        // // no selected cards now
-        // this._selectedCards = [];
 
         console.log("Player's selected cards:");
         console.log(this._selectedCards);
-
-        // return playType;
     }
 
     public reset():void {
         // all players are assumed not playing until dealt cards
         this._state = Player.STATE_NOT_PLAYING;
+        this._status = Player.STATUS_NEUTRAL;
         this._hand = [];
         this._selectedCards = [];
     }

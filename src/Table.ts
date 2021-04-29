@@ -6,23 +6,31 @@ import Player from "./Player";
 import { PLAYER_CARD_SPREAD, COMPUTER_CARD_SPREAD, STAGE_WIDTH, STAGE_HEIGHT } from "./Constants";
 
 export default class Table {
-
     private stage:createjs.StageGL;
     private sprite:createjs.Sprite;    
     private turnMarker:createjs.Sprite;
 
+    private statusCounter:number;
+    private statusRankings:number[];
+
+    private _playersInGame:number
+    private passIndicator:createjs.Sprite;    
+    
     private _player:Player;
-    private _playerStartingRound:Player;
     private _playedCards:Card[];
     private _playSpot:createjs.Container;
-    private _playersOut:Player[];
+    private _playersTotalCount:number;
 
+    private eventGameOver:createjs.Event;
+    private eventHumanOut:createjs.Event;
+    
     constructor(stage:createjs.StageGL, assetManager:AssetManager) {
         // initialization
         this.stage = stage;
-        this._playerStartingRound = null;
         this._playedCards = [];
-        this._playersOut = [];
+        this._playersTotalCount = 4;
+        this.statusCounter = 0;
+        this._playersInGame = 4;
 
         // construct background sprite
         let background:createjs.Sprite = assetManager.getSprite("sprites","screens/background",0,0);
@@ -45,6 +53,12 @@ export default class Table {
         let playSpotBackground:createjs.Sprite = assetManager.getSprite("sprites", "screens/playSpot", 0, 0);
         this._playSpot.addChild(playSpotBackground);
         this.stage.addChild(this._playSpot);
+
+        // construct passIndicator sprite for showing computer passed
+        this.passIndicator = assetManager.getSprite("sprites", "cursors/pass", 77, 58);
+
+        this.eventGameOver = new createjs.Event("gameOver", true, false);
+        this.eventHumanOut = new createjs.Event("humanOut", true, false);
     }
 
     // -------------------------------------------- gets/sets
@@ -76,10 +90,6 @@ export default class Table {
         }
     }
 
-    public get playerStartingRound():Player {
-        return this._playerStartingRound;
-    }
-
     public get playSpot():createjs.Container {
         return this._playSpot;
     }
@@ -88,24 +98,47 @@ export default class Table {
         return this._playedCards;
     }
 
-    public get playersOut():Player[] {
-        return this._playersOut;
+    public get playersInGameCount():number {
+        return this._playersInGame;
+    }
+
+    public set playersTotalCount(value:number) {
+        this._playersTotalCount = value;
+        this._playersInGame = value;
+
+        if (this._playersTotalCount == 4) this.statusRankings = [2,1,-1,-2];
+        else this.statusRankings = [1,0,-1];
     }
 
     // -------------------------------------------- public methods
     public reset():void {
         this.clearTable();
-        this._playersOut = [];
-        this._playerStartingRound = null;
-
-
+        this.hidePass();
+        this.playersTotalCount = this._playersTotalCount;
+        this.statusCounter = 0;
     }
 
     public clearTable():void {
-        console.log("CLEARING TABLE");
         this._playedCards.forEach(card => card.hideMe());
         this._playedCards = [];
-        this._playerStartingRound = null;
+    }
+
+    public showPass():void {
+        if (this._player instanceof ComputerPlayer) this._playSpot.addChild(this.passIndicator);
+    }    
+    
+    public hidePass():void {
+        this._playSpot.removeChild(this.passIndicator);
+    }   
+    
+    public showLoser(players:Player[]):void {
+        // find which player is loser and turn cards face up
+        let loser:Player = players.find(player => player.state != Player.STATE_OUT);
+        // highlight the loser on table
+        this.player = loser;
+        // reveal its cards
+        loser.revealCards();
+        loser.status = this.statusRankings[this.statusCounter];
     }
 
     public playCards():number {
@@ -117,10 +150,6 @@ export default class Table {
         if (selectedCards.length == 0) playType = Player.PLAYED_PASS;
         else if (selectedCards[0].rank == 2) playType = Player.PLAYED_TWO;
 
-        if ((playType == Player.PLAYED_CARD) || (this._playerStartingRound == null)) {
-            // keeping track of player that is starting the round
-            this._playerStartingRound = this._player;
-        }
         if (playType != Player.PLAYED_PASS) {
             // hide cards underneath
             this._playedCards.forEach(card => card.hideMe());
@@ -138,21 +167,19 @@ export default class Table {
           
         // check if player is out of round
         if (this._player.hand.length == 0) {
+            // update player
             this._player.state = Player.STATE_OUT;
-            // add player to list of out players
-            this._playersOut.push(this._player);
-            // set to null to indicate next player is starting round player
-            console.log("*** PLAYER OUT");
-            this._playerStartingRound = null;
+            this._player.status = this.statusRankings[this.statusCounter];
+            this.statusCounter++;
+            this._playersInGame--;
+
+            console.log("*** PLAYER OUT with status " + this._player.status + " : number left " + this._playersInGame);
 
             // is this player the human?
-            // ????????????????? speed up game
+            if (this._player instanceof HumanPlayer) this.sprite.dispatchEvent(this.eventHumanOut);
+            // is the round over?
+            if (this._playersInGame <= 1) this.sprite.dispatchEvent(this.eventGameOver);
         }
-
-        // check if all but one player out of round
-        // ???? flip over cards and end round
-
-        
 
         return playType;
     }
@@ -161,7 +188,6 @@ export default class Table {
         let selectedCards:Card[] = this._player.selectedCards;
         // if no cards on the table everything is valid
         if (this._playedCards.length == 0) return true;
-
 		// rule set : one 2 to clear any number of cards
 		// number of cards selected and in play must be the same number
         if ((selectedCards.length == this._playedCards.length) || (selectedCards[0].rank == 2)) {

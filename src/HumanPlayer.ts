@@ -6,7 +6,7 @@ import AssetManager from "./AssetManager";
 export default class HumanPlayer extends Player {
 
     private playSpot:createjs.Container;
-    private eventHumanTookTurn:createjs.Event;
+    private eventCardsSelected:createjs.Event;
 
     constructor(stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], table:Table) {
         super(stage, assetManager, deck, table);
@@ -23,7 +23,7 @@ export default class HumanPlayer extends Player {
         stage.on("cardSelected", this.onCardEvent, this);
         stage.on("cardDeselected", this.onCardEvent, this);
 
-        this.eventHumanTookTurn = new createjs.Event("cardsSelected", true, false);
+        this.eventCardsSelected = new createjs.Event("cardsSelected", true, false);
     }
    
     // --------------------------------------------------- public methods
@@ -58,13 +58,14 @@ export default class HumanPlayer extends Player {
             this.disableMe();
         }
 
-        this.playSpot.dispatchEvent(this.eventHumanTookTurn);
+        this.playSpot.dispatchEvent(this.eventCardsSelected);
     }
 
     private onOver(e:createjs.Event):void {
         if (this._state == Player.STATE_DISABLED) return;
         // hide real cursor
         this.playSpot.cursor = "none";
+
         // replace cursor with sprite
         if (this._state == Player.STATE_CARDS_SELECTED) this.cursor.gotoAndStop("cursors/pointer");
         else this.cursor.gotoAndStop("cursors/pass");

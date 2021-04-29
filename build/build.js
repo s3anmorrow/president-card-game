@@ -10280,7 +10280,6 @@ Card.STATE_PLAYED = 5;
 Object.defineProperty(exports, "__esModule", { value: true });
 const Player_1 = __webpack_require__(/*! ./Player */ "./src/Player.ts");
 const Toolkit_1 = __webpack_require__(/*! ./Toolkit */ "./src/Toolkit.ts");
-const Constants_1 = __webpack_require__(/*! ./Constants */ "./src/Constants.ts");
 class ComputerPlayer extends Player_1.default {
     constructor(stage, assetManager, deck, humanPlayer, table) {
         super(stage, assetManager, deck, table);
@@ -10294,14 +10293,6 @@ class ComputerPlayer extends Player_1.default {
         });
         return count;
     }
-    pass() {
-        this.cursor.x = 77;
-        this.cursor.y = 58;
-        this.table.playSpot.addChild(this.cursor);
-        this.cursorDelayTimer = window.setTimeout(() => {
-            this.table.playSpot.removeChild(this.cursor);
-        }, Constants_1.TURN_DELAY - 250);
-    }
     selectCards() {
         const LOW_CARD_THRESHOLD = 4;
         const HIGH_CARD_THRESHOLD = 6;
@@ -10311,8 +10302,6 @@ class ComputerPlayer extends Player_1.default {
             playedRank = this.table.playedCards[0].rank;
         let playableCards = this._hand.filter(card => ((this.countCards(this._hand, card.rank) >= playedCount) && (card.rank > playedRank)));
         this._selectedCards = [];
-        console.log("Computer's playable hand:");
-        console.log(playableCards);
         let twoCount = this.countCards(this._hand, 2);
         let lowCount = 0;
         let highCount = 0;
@@ -10320,7 +10309,6 @@ class ComputerPlayer extends Player_1.default {
             lowCount = this.countCards(playableCards, playableCards[0].rank);
             highCount = this.countCards(playableCards, playableCards[playableCards.length - 1].rank);
         }
-        console.log("two count: " + twoCount);
         let myLowAlert = (this._hand.length < LOW_CARD_THRESHOLD);
         let humanLowAlert = (this.humanPlayer.hand.length < LOW_CARD_THRESHOLD);
         if (playedCount == 0) {
@@ -10361,7 +10349,7 @@ class ComputerPlayer extends Player_1.default {
                     this._selectedCards = this._hand.slice(0, 1);
                 }
                 else if (Toolkit_1.probabilityMe(10)) {
-                    this.pass();
+                    this._selectedCards = [];
                 }
                 else if (Toolkit_1.probabilityMe(50)) {
                     this._selectedCards = playableCards.slice(-highCount);
@@ -10375,7 +10363,7 @@ class ComputerPlayer extends Player_1.default {
                     this._selectedCards = this._hand.slice(0, 1);
                 }
                 else {
-                    this.pass();
+                    this._selectedCards = [];
                 }
             }
         }
@@ -10397,14 +10385,13 @@ exports.default = ComputerPlayer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ASSET_MANIFEST = exports.TURN_DELAY = exports.COMPUTER_CARD_SPREAD = exports.PLAYER_CARD_SPREAD = exports.MAX_COMPUTER_PLAYERS = exports.FRAME_RATE = exports.STAGE_HEIGHT = exports.STAGE_WIDTH = void 0;
+exports.ASSET_MANIFEST = exports.TURN_DELAY = exports.COMPUTER_CARD_SPREAD = exports.PLAYER_CARD_SPREAD = exports.FRAME_RATE = exports.STAGE_HEIGHT = exports.STAGE_WIDTH = void 0;
 exports.STAGE_WIDTH = 600;
 exports.STAGE_HEIGHT = 450;
 exports.FRAME_RATE = 30;
-exports.MAX_COMPUTER_PLAYERS = 3;
 exports.PLAYER_CARD_SPREAD = 20;
 exports.COMPUTER_CARD_SPREAD = 15;
-exports.TURN_DELAY = 1000;
+exports.TURN_DELAY = 200;
 exports.ASSET_MANIFEST = [
     {
         type: "json",
@@ -10451,12 +10438,15 @@ let computerPlayer2;
 let computerPlayer3;
 let players;
 let deck;
-let playerCount = 4;
+let playerTotalCount = 4;
 let turnIndex = 0;
-let turnDelayTimer;
+let turnTimer;
 let playType;
+let passCounter;
+let gameOn;
+let phase;
 function startGame() {
-    if (playerCount == 3) {
+    if (playerTotalCount == 3) {
         computerPlayer1.orientation = Player_1.default.ORIENTATION_LEFT;
         computerPlayer2.orientation = Player_1.default.ORIENTATION_RIGHT;
         players = [humanPlayer, computerPlayer1, computerPlayer2];
@@ -10468,29 +10458,107 @@ function startGame() {
         players = [humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3];
     }
     players.forEach(player => player.reset());
-    turnIndex = 0;
+    table.playersTotalCount = playerTotalCount;
+    turnIndex = 1;
+    table.player = players[turnIndex];
 }
 function startRound() {
+    passCounter = 0;
+    phase = 1;
+    gameOn = true;
     while (true) {
-        for (let n = 0; n < playerCount; n++)
+        for (let n = 0; n < playerTotalCount; n++)
             players[n].dealCard();
         if (deck.length <= 0)
             break;
     }
     playType = Player_1.default.PLAYED_CARD;
-    if (turnIndex == 0)
-        onPlayerTurn();
-    else
-        turnDelayTimer = window.setInterval(onPlayerTurn, Constants_1.TURN_DELAY);
+    if (turnIndex == 0) {
+        onTurn();
+    }
+    else {
+        turnTimer = window.setInterval(onTurn, Constants_1.TURN_DELAY);
+        humanPlayer.disableMe();
+    }
 }
-function nextPlayer() {
+function processCards() {
+    if (!gameOn)
+        return;
+    if (playType == Player_1.default.PLAYED_TWO) {
+        console.log("=> CLEARED WITH TWO");
+        table.clearTable();
+        passCounter = 0;
+    }
+    else if (playType == Player_1.default.PLAYED_PASS) {
+        console.log("=> PASSED!");
+        table.showPass();
+        passCounter++;
+    }
     if (playType != Player_1.default.PLAYED_TWO) {
-        if (++turnIndex == playerCount)
+        if (++turnIndex == playerTotalCount)
             turnIndex = 0;
         while (players[turnIndex].state == Player_1.default.STATE_OUT) {
-            if (++turnIndex == playerCount)
+            if (++turnIndex == playerTotalCount)
                 turnIndex = 0;
         }
+    }
+    if (playType != Player_1.default.PLAYED_PASS)
+        passCounter = 0;
+}
+function onTurn() {
+    if (phase == 1) {
+        console.log("********* PLAYER TURN ********************");
+        table.player = players[turnIndex];
+        table.hidePass();
+        if (passCounter == (table.playersInGameCount - 1)) {
+            console.log("=> CLEARED WITH PASS");
+            table.clearTable();
+            passCounter = 0;
+        }
+        phase++;
+    }
+    else if (phase == 2) {
+        if (players[turnIndex] instanceof HumanPlayer_1.default) {
+            console.log("=> PAUSED FOR HUMAN'S TURN");
+            window.clearInterval(turnTimer);
+            humanPlayer.enableMe();
+        }
+        else {
+            console.log("=> COMPUTER'S TURN");
+            players[turnIndex].selectCards();
+            playType = table.playCards();
+        }
+        phase++;
+    }
+    else {
+        processCards();
+        phase = 1;
+    }
+}
+function onGameEvent(e) {
+    switch (e.type) {
+        case "cardsSelected":
+            console.log("=> HUMAN'S TURN");
+            players[turnIndex].selectCards();
+            playType = table.playCards();
+            processCards();
+            phase = 1;
+            if (gameOn) {
+                console.log("=> UNPAUSING FOR HUMAN");
+                turnTimer = window.setInterval(onTurn, Constants_1.TURN_DELAY);
+            }
+            break;
+        case "humanOut":
+            break;
+        case "gameOver":
+            console.log("GAME IS OVER!");
+            gameOn = false;
+            window.clearInterval(turnTimer);
+            table.showLoser(players);
+            console.table(players);
+            break;
+        case "gameFinished":
+            break;
     }
 }
 function onReady(e) {
@@ -10509,34 +10577,12 @@ function onReady(e) {
     computerPlayer3 = new ComputerPlayer_1.default(stage, assetManager, deck, humanPlayer, table);
     startGame();
     startRound();
+    stage.on("gameOver", onGameEvent);
+    stage.on("humanOut", onGameEvent);
+    stage.on("cardsSelected", onGameEvent);
     createjs.Ticker.framerate = Constants_1.FRAME_RATE;
     createjs.Ticker.on("tick", onTick);
     console.log(">> game ready");
-}
-function onPlayerTurn() {
-    table.player = players[turnIndex];
-    if ((playType == Player_1.default.PLAYED_TWO) || (table.playerStartingRound == players[turnIndex])) {
-        console.log("STARTING new round!");
-        table.clearTable();
-        playType = Player_1.default.PLAYED_NONE;
-    }
-    else if (players[turnIndex] instanceof ComputerPlayer_1.default) {
-        console.log("********* COMPUTER'S TURN ********************");
-        players[turnIndex].selectCards();
-        playType = table.playCards();
-        nextPlayer();
-    }
-    else {
-        console.log("********* HUMAN'S TURN ********************");
-        window.clearInterval(turnDelayTimer);
-        humanPlayer.enableMe();
-        table.playSpot.on("cardsSelected", (e) => {
-            players[turnIndex].selectCards();
-            playType = table.playCards();
-            nextPlayer();
-            turnDelayTimer = window.setInterval(onPlayerTurn, Constants_1.TURN_DELAY);
-        }, this, true);
-    }
 }
 function onTick(e) {
     document.getElementById("fps").innerHTML = String(createjs.Ticker.getMeasuredFPS());
@@ -10580,7 +10626,7 @@ class HumanPlayer extends Player_1.default {
         this.playSpot.on("click", this.onClick, this);
         stage.on("cardSelected", this.onCardEvent, this);
         stage.on("cardDeselected", this.onCardEvent, this);
-        this.eventHumanTookTurn = new createjs.Event("cardsSelected", true, false);
+        this.eventCardsSelected = new createjs.Event("cardsSelected", true, false);
     }
     update() {
         this.cursor.x = this.stage.mouseX;
@@ -10608,7 +10654,7 @@ class HumanPlayer extends Player_1.default {
             this._selectedCards = [];
             this.disableMe();
         }
-        this.playSpot.dispatchEvent(this.eventHumanTookTurn);
+        this.playSpot.dispatchEvent(this.eventCardsSelected);
     }
     onOver(e) {
         if (this._state == Player_1.default.STATE_DISABLED)
@@ -10701,6 +10747,9 @@ class Player {
     get status() {
         return this._status;
     }
+    set status(value) {
+        this._status = value;
+    }
     set orientation(value) {
         this._orientation = value;
     }
@@ -10716,6 +10765,9 @@ class Player {
         this.deck.splice(index, 1);
         this._state = Player.STATE_CARDS_NOT_SELECTED;
         this.table.refreshCards(this);
+    }
+    revealCards() {
+        this._hand.forEach(card => card.showFaceUp());
     }
     returnCards(deck) {
         for (let card of this._hand)
@@ -10734,6 +10786,7 @@ class Player {
     }
     reset() {
         this._state = Player.STATE_NOT_PLAYING;
+        this._status = Player.STATUS_NEUTRAL;
         this._hand = [];
         this._selectedCards = [];
     }
@@ -10778,9 +10831,10 @@ const Constants_1 = __webpack_require__(/*! ./Constants */ "./src/Constants.ts")
 class Table {
     constructor(stage, assetManager) {
         this.stage = stage;
-        this._playerStartingRound = null;
         this._playedCards = [];
-        this._playersOut = [];
+        this._playersTotalCount = 4;
+        this.statusCounter = 0;
+        this._playersInGame = 4;
         let background = assetManager.getSprite("sprites", "screens/background", 0, 0);
         background.scaleX = Constants_1.STAGE_WIDTH;
         background.scaleY = Constants_1.STAGE_HEIGHT;
@@ -10795,6 +10849,9 @@ class Table {
         let playSpotBackground = assetManager.getSprite("sprites", "screens/playSpot", 0, 0);
         this._playSpot.addChild(playSpotBackground);
         this.stage.addChild(this._playSpot);
+        this.passIndicator = assetManager.getSprite("sprites", "cursors/pass", 77, 58);
+        this.eventGameOver = new createjs.Event("gameOver", true, false);
+        this.eventHumanOut = new createjs.Event("humanOut", true, false);
     }
     set player(value) {
         this._player = value;
@@ -10821,28 +10878,45 @@ class Table {
                 break;
         }
     }
-    get playerStartingRound() {
-        return this._playerStartingRound;
-    }
     get playSpot() {
         return this._playSpot;
     }
     get playedCards() {
         return this._playedCards;
     }
-    get playersOut() {
-        return this._playersOut;
+    get playersInGameCount() {
+        return this._playersInGame;
+    }
+    set playersTotalCount(value) {
+        this._playersTotalCount = value;
+        this._playersInGame = value;
+        if (this._playersTotalCount == 4)
+            this.statusRankings = [2, 1, -1, -2];
+        else
+            this.statusRankings = [1, 0, -1];
     }
     reset() {
         this.clearTable();
-        this._playersOut = [];
-        this._playerStartingRound = null;
+        this.hidePass();
+        this.playersTotalCount = this._playersTotalCount;
+        this.statusCounter = 0;
     }
     clearTable() {
-        console.log("CLEARING TABLE");
         this._playedCards.forEach(card => card.hideMe());
         this._playedCards = [];
-        this._playerStartingRound = null;
+    }
+    showPass() {
+        if (this._player instanceof ComputerPlayer_1.default)
+            this._playSpot.addChild(this.passIndicator);
+    }
+    hidePass() {
+        this._playSpot.removeChild(this.passIndicator);
+    }
+    showLoser(players) {
+        let loser = players.find(player => player.state != Player_1.default.STATE_OUT);
+        this.player = loser;
+        loser.revealCards();
+        loser.status = this.statusRankings[this.statusCounter];
     }
     playCards() {
         let selectedCards = this._player.selectedCards;
@@ -10851,9 +10925,6 @@ class Table {
             playType = Player_1.default.PLAYED_PASS;
         else if (selectedCards[0].rank == 2)
             playType = Player_1.default.PLAYED_TWO;
-        if ((playType == Player_1.default.PLAYED_CARD) || (this._playerStartingRound == null)) {
-            this._playerStartingRound = this._player;
-        }
         if (playType != Player_1.default.PLAYED_PASS) {
             this._playedCards.forEach(card => card.hideMe());
             this._playedCards = selectedCards;
@@ -10866,9 +10937,14 @@ class Table {
         }
         if (this._player.hand.length == 0) {
             this._player.state = Player_1.default.STATE_OUT;
-            this._playersOut.push(this._player);
-            console.log("*** PLAYER OUT");
-            this._playerStartingRound = null;
+            this._player.status = this.statusRankings[this.statusCounter];
+            this.statusCounter++;
+            this._playersInGame--;
+            console.log("*** PLAYER OUT with status " + this._player.status + " : number left " + this._playersInGame);
+            if (this._player instanceof HumanPlayer_1.default)
+                this.sprite.dispatchEvent(this.eventHumanOut);
+            if (this._playersInGame <= 1)
+                this.sprite.dispatchEvent(this.eventGameOver);
         }
         return playType;
     }
@@ -11015,7 +11091,7 @@ exports.pointHit = pointHit;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /Users/seanmorrow/OneDrive - Nova Scotia Community College/_workspace/_working/president-card-game/node_modules/webpack-dev-server/client/index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
+__webpack_require__(/*! D:\OneDrive - Nova Scotia Community College\_workspace\_working\president-card-game\node_modules\webpack-dev-server\client\index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
 module.exports = __webpack_require__(/*! ./src/Game.ts */"./src/Game.ts");
 
 
