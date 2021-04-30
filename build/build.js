@@ -10627,6 +10627,7 @@ function onReady(e) {
 function onTick(e) {
     document.getElementById("fps").innerHTML = String(createjs.Ticker.getMeasuredFPS());
     humanPlayer.update();
+    screenManager.update();
     stage.update();
 }
 function main() {
@@ -10661,6 +10662,7 @@ class HumanPlayer extends Player_1.default {
     constructor(name, stage, assetManager, deck, table) {
         super(name, stage, assetManager, deck, table);
         this.playSpot = table.playSpot;
+        this.cursor = assetManager.getSprite("sprites", "cursors/pass", 0, 0);
         this.playSpot.on("mouseover", this.onOver, this);
         this.playSpot.on("mouseout", this.onOut, this);
         this.playSpot.on("click", this.onClick, this);
@@ -10769,7 +10771,6 @@ class Player {
         this._state = Player.STATE_NOT_PLAYING;
         this._status = Player.STATUS_NEUTRAL;
         this._orientation = Player.ORIENTATION_BOTTOM;
-        this.cursor = assetManager.getSprite("sprites", "cursors/pass", 0, 0);
     }
     get name() {
         return this._name;
@@ -10883,6 +10884,7 @@ class ScreenManager {
     constructor(stage, assetManager) {
         this.stage = stage;
         this.assetManager = assetManager;
+        this.cursor = assetManager.getSprite("sprites", "cursors/checkmark", 0, 0);
         this.summaryScreen = new createjs.Container();
         this.summaryScreen.x = 123;
         this.summaryScreen.y = 140;
@@ -10896,6 +10898,9 @@ class ScreenManager {
             dropY += 35;
         }
         this.eventNewGame = new createjs.Event("newGame", true, false);
+    }
+    showIntro() {
+        this.hideAll();
     }
     showSummary(players) {
         this.hideAll();
@@ -10924,6 +10929,22 @@ class ScreenManager {
         this.summaryScreen.on("click", (e) => {
             this.stage.dispatchEvent(this.eventNewGame);
         }, this, true);
+        this.summaryScreen.on("mouseover", this.onOver, this);
+        this.summaryScreen.on("mouseout", this.onOut, this);
+    }
+    update() {
+        this.cursor.x = this.stage.mouseX;
+        this.cursor.y = this.stage.mouseY;
+    }
+    onOver(e) {
+        this.summaryScreen.cursor = "none";
+        this.cursor.x = this.stage.mouseX;
+        this.cursor.y = this.stage.mouseY;
+        this.stage.addChild(this.cursor);
+    }
+    onOut(e) {
+        this.summaryScreen.cursor = "default";
+        this.stage.removeChild(this.cursor);
     }
     hideAll() {
         this.stage.removeChild(this.summaryScreen);

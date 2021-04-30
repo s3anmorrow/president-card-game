@@ -31,7 +31,6 @@ export default abstract class Player {
     protected deck:Card[];
     protected table:Table;
     protected turnDelayTimer:number;
-    protected cursor:createjs.Sprite;
 
     protected _state:number;
     protected _name:string;
@@ -51,9 +50,6 @@ export default abstract class Player {
         this._state = Player.STATE_NOT_PLAYING;
         this._status = Player.STATUS_NEUTRAL;
         this._orientation = Player.ORIENTATION_BOTTOM;
-
-        // construct cursor sprite for mouse pointer (human player) or pass icon (computer player)
-        this.cursor = assetManager.getSprite("sprites", "cursors/pass", 0, 0);
     }
 
     // -------------------------------------------------- gets/sets

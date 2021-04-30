@@ -6,6 +6,7 @@ import AssetManager from "./AssetManager";
 export default class HumanPlayer extends Player {
 
     private playSpot:createjs.Container;
+    private cursor:createjs.Sprite;
     private eventCardsSelected:createjs.Event;
 
     constructor(name:string, stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], table:Table) {
@@ -13,6 +14,8 @@ export default class HumanPlayer extends Player {
 
         // initialialization
         this.playSpot = table.playSpot;
+        // construct cursor sprite for mouse pointer (human player)
+        this.cursor = assetManager.getSprite("sprites", "cursors/pass", 0, 0);
 
         // add event listeners
         this.playSpot.on("mouseover", this.onOver, this);
@@ -63,9 +66,9 @@ export default class HumanPlayer extends Player {
 
     private onOver(e:createjs.Event):void {
         if (this._state == Player.STATE_DISABLED) return;
+
         // hide real cursor
         this.playSpot.cursor = "none";
-
         // replace cursor with sprite
         if (this._state == Player.STATE_CARDS_SELECTED) this.cursor.gotoAndStop("cursors/pointer");
         else this.cursor.gotoAndStop("cursors/pass");

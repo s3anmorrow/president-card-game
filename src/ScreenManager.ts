@@ -3,14 +3,15 @@ import Player from "./Player";
 
 export default class ScreenManager {
     // custom event for dispatching
-    private eventStartGame:createjs.Event;
-    private eventResetGame:createjs.Event;
+    // private eventStartGame:createjs.Event;
+    // private eventResetGame:createjs.Event;
 
     private assetManager:AssetManager;
-    private introScreen:createjs.Container;
-    private gameOverScreen:createjs.Container;
+    // private introScreen:createjs.Container;
+    // private gameOverScreen:createjs.Container;
     private txtScores:createjs.BitmapText[];
     private summaryScreen:createjs.Container;
+    private cursor:createjs.Sprite;
     private stage:createjs.StageGL;
 
     private eventNewGame:createjs.Event;
@@ -23,6 +24,9 @@ export default class ScreenManager {
         // this.introScreen = new createjs.Container(); 
         // this.introScreen.addChild(assetManager.getSprite("sprites","misc/backgroundIntro",0,0));
         // this.introScreen.addChild(bugSprite);
+
+        // construct cursor sprite for mouse pointer
+        this.cursor = assetManager.getSprite("sprites", "cursors/checkmark", 0, 0);
 
         this.summaryScreen = new createjs.Container();
         this.summaryScreen.x = 123;
@@ -50,15 +54,15 @@ export default class ScreenManager {
     }
 
     // -------------------------------------------------- public methods
-    // public showIntro():void {        
-    //     this.hideAll();
-    //     this.stage.addChildAt(this.introScreen,0);
+    public showIntro():void {        
+        this.hideAll();
+        // this.stage.addChildAt(this.introScreen,0);
 
-    //     // wire up listener to detect click event once and dispatch custom event
-    //     this.stage.on("click", (e) => {
-    //         this.stage.dispatchEvent(this.eventStartGame);
-    //     }, this, true);        
-    // }
+        // // wire up listener to detect click event once and dispatch custom event
+        // this.stage.on("click", (e) => {
+        //     this.stage.dispatchEvent(this.eventStartGame);
+        // }, this, true);        
+    }
 
     // public showGame():void {
     //     this.hideAll();
@@ -105,6 +109,30 @@ export default class ScreenManager {
         this.summaryScreen.on("click", (e) => {
             this.stage.dispatchEvent(this.eventNewGame);
         }, this, true);
+
+        this.summaryScreen.on("mouseover", this.onOver, this);
+        this.summaryScreen.on("mouseout", this.onOut, this);
+    }
+
+    // --------------------------------------------------- public methods
+    public update():void {
+        this.cursor.x = this.stage.mouseX;
+        this.cursor.y = this.stage.mouseY;
+    }     
+
+    // -------------------------------------------------- event handlers
+    private onOver(e:createjs.Event):void {
+        // hide real cursor
+        this.summaryScreen.cursor = "none";
+        this.cursor.x = this.stage.mouseX;
+        this.cursor.y = this.stage.mouseY;
+        this.stage.addChild(this.cursor);
+    }
+
+    private onOut(e:createjs.Event):void {
+        // reset cursor back to real cursor
+        this.summaryScreen.cursor = "default";
+        this.stage.removeChild(this.cursor);
     }
 
     // -------------------------------------------------- private methods

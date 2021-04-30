@@ -262,6 +262,7 @@ function onTick(e:createjs.Event):void {
 
     // game loop
     humanPlayer.update();
+    screenManager.update();
 
     // update the stage!
     stage.update();
