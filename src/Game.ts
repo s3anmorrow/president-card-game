@@ -64,9 +64,8 @@ function startGame():void {
     
     // when game first starts, randomly pick who goes first
     // turnIndex = randomMe(0, players.length - 1);
-    turnIndex = 1;
+    turnIndex = 0;
     table.player = players[turnIndex];
-    
 }
 
 function startRound():void {
@@ -92,22 +91,13 @@ function startRound():void {
     playType = Player.PLAYED_CARD;
     if (turnIndex == 0) {
         onTurn();
+        humanPlayer.enableMe();
     } else {
         turnTimer = window.setInterval(onTurn, TURN_DELAY);
         humanPlayer.disableMe();
     }
     
 }
-
-// function nextPlayer():void {
-//     // move index to next player (or find next player that is still in the game) as long as no two dropped
-//     if (playType != Player.PLAYED_TWO) {
-//         if (++turnIndex == playerTotalCount) turnIndex = 0;
-//         while (players[turnIndex].state == Player.STATE_OUT) {
-//             if (++turnIndex == playerTotalCount) turnIndex = 0;
-//         }
-//     }
-// }
 
 function processCards():void {
     if (!gameOn) return;
@@ -138,11 +128,12 @@ function processCards():void {
 // --------------------------------------------------- event handlers
 function onTurn() { 
     if (phase == 1) {
-        // PHASE I : highlighting current player
+        // TURN PHASE I : highlighting current player
         console.log("********* PLAYER TURN ********************");       
         // setup table for turn (set highlights current player)
         table.player = players[turnIndex];
         table.hidePass();
+        table.showTurnMarker(players);
 
         // first clear table if player won by all others passing
         if (passCounter == (table.playersInGameCount - 1)) {
@@ -153,7 +144,7 @@ function onTurn() {
 
         phase++;
     } else if (phase == 2) {
-        // PHASE II : selecting and placing cards on table
+        // TURN PHASE II : selecting and placing cards on table
         if (players[turnIndex] instanceof HumanPlayer) {
             console.log("=> PAUSED FOR HUMAN'S TURN");
             // wait for human to take turn (enable for interactivity)
@@ -166,7 +157,7 @@ function onTurn() {
         } 
         phase++;
     } else {
-        // PHASE III : processing played cards
+        // TURN PHASE III : processing played cards
         processCards();
         phase = 1;
     }
@@ -211,6 +202,7 @@ function onGameEvent(e:createjs.Event):void {
 }
 
 // TODO fix rollover issue with cards after enabled
+// TODO fix width of playspace
 
 
 function onReady(e:createjs.Event):void {

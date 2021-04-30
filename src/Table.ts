@@ -8,7 +8,6 @@ import { PLAYER_CARD_SPREAD, COMPUTER_CARD_SPREAD, STAGE_WIDTH, STAGE_HEIGHT } f
 export default class Table {
     private stage:createjs.StageGL;
     private sprite:createjs.Sprite;    
-    private turnMarker:createjs.Sprite;
 
     private statusCounter:number;
     private statusRankings:number[];
@@ -38,18 +37,15 @@ export default class Table {
         background.scaleY = STAGE_HEIGHT;
         stage.addChild(background);   
         
-        // table sprites
-        this.sprite = assetManager.getSprite("sprites", "screens/table", 300, 200);
-        this.stage.addChild(this.sprite);
-
-        // turn pointer
-        this.turnMarker = assetManager.getSprite("sprites","screens/turnMarker",0,0);
-        this.stage.addChild(this.turnMarker);
+        // table label sprites
+        this.stage.addChild(assetManager.getSprite("sprites","screens/tableLabel1",400,145));
+        this.stage.addChild(assetManager.getSprite("sprites","screens/tableLabel2",400,354));
+        this.stage.addChild(assetManager.getSprite("sprites","screens/tableLabel3",400,376));
 
         // playspot where players drop cards
         this._playSpot = new createjs.Container();
-        this._playSpot.x = 220;
-        this._playSpot.y = 133;
+        this._playSpot.x = 291;
+        this._playSpot.y = 168;
         let playSpotBackground:createjs.Sprite = assetManager.getSprite("sprites", "screens/playSpot", 0, 0);
         this._playSpot.addChild(playSpotBackground);
         this.stage.addChild(this._playSpot);
@@ -65,29 +61,6 @@ export default class Table {
     // the player object who is currently taking a turn
     public set player(value:Player) {
         this._player = value;
-        // adjust turn pointer
-        switch (this._player.orientation){
-            case Player.ORIENTATION_BOTTOM:
-                this.turnMarker.rotation = 0;
-                this.turnMarker.x = 300;
-                this.turnMarker.y = 400;
-                break;
-            case Player.ORIENTATION_TOP:
-                this.turnMarker.rotation = 180;
-                this.turnMarker.x = 300;
-                this.turnMarker.y = 0;
-                break;
-            case Player.ORIENTATION_LEFT:
-                this.turnMarker.rotation = 90;
-                this.turnMarker.x = -10;
-                this.turnMarker.y = 225;
-                break;
-            case Player.ORIENTATION_RIGHT:
-                this.turnMarker.rotation = 270;
-                this.turnMarker.x = 610;
-                this.turnMarker.y = 225;
-                break;            
-        }
     }
 
     public get playSpot():createjs.Container {
@@ -157,7 +130,7 @@ export default class Table {
             this._playedCards = selectedCards;
 
             // positioning selected cards in playspace
-            let dropSpotX:number = (155 - ((selectedCards.length - 1) * PLAYER_CARD_SPREAD) - 71) / 2;
+            let dropSpotX:number = (207 - ((selectedCards.length - 1) * PLAYER_CARD_SPREAD) - 99) / 2;
             selectedCards.forEach(card => {
                 card.positionMe(dropSpotX, 10);
                 card.playMe();
@@ -199,52 +172,53 @@ export default class Table {
 		return false;
 	}
 
+    public showTurnMarker(players:Player[]):void {
+        // hide all turn markers for all players
+        players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
+        // show current player's turn markers
+        this._player.hand.forEach(card => card.showTurnMarker())
+    }
+
     public refreshCards(player:Player):void {
-        let dropSpotX:number = 0;
-        let dropSpotY:number = 340;
+        let dropSpotX:number;
+        let dropSpotY:number;
         let cards:Card[] = player.hand;
         // sort cards
         cards.sort(this.sortCompare);
 
-        if (player instanceof HumanPlayer) {
-            // calculating card x drop spot so all cards are centered on stage
-            dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * PLAYER_CARD_SPREAD) + 71))/2);
-            // placing onto table
-            for (let card of cards){
-                card.positionMe(dropSpotX, dropSpotY);
+        // calculating card x drop spot so all cards are centered on stage
+        if (player.orientation == Player.ORIENTATION_LEFT) {
+            dropSpotX = 80;
+            dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
+        } else if (player.orientation == Player.ORIENTATION_RIGHT) {
+            dropSpotX = 850;
+            dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
+        } else if (player.orientation == Player.ORIENTATION_TOP) {
+            dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
+            dropSpotY = -50;
+        } else {
+            dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * PLAYER_CARD_SPREAD) + 99))/2);
+            dropSpotY = 440;
+        }
+
+        // placing cards onto table
+        for (let card of cards) {
+            card.positionMe(dropSpotX, dropSpotY);
+            card.disableMe();
+            if ((player.orientation == Player.ORIENTATION_LEFT) || (player.orientation == Player.ORIENTATION_RIGHT)) {
+                card.rotateMe(90);
+                card.showFaceDown();
+                dropSpotY = dropSpotY + COMPUTER_CARD_SPREAD;
+            } else if (player.orientation == Player.ORIENTATION_TOP) {
+                card.rotateMe(0);
+                card.showFaceDown();
+                dropSpotX = dropSpotX + COMPUTER_CARD_SPREAD;
+            } else {
+                card.rotateMe(0);
                 card.showFaceUp();
                 dropSpotX = dropSpotX + PLAYER_CARD_SPREAD;
             }
-        } else {
-            // calculating card x drop spot so all cards are centered on stage
-            if (player.orientation == ComputerPlayer.ORIENTATION_LEFT) {
-                dropSpotX = 40;
-                dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 71))/2);
-            } else if (player.orientation == ComputerPlayer.ORIENTATION_RIGHT) {
-                dropSpotX = 650;
-                dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 71))/2);
-            } else {
-                dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 71))/2);
-                dropSpotY = -40;
-            }
-
-            // placing cards onto table
-            for (let card of cards) {
-                card.positionMe(dropSpotX, dropSpotY);
-                card.showFaceDown();
-                // these are computer cards so no interactivity required
-                card.disableMe();
-                if ((player.orientation == ComputerPlayer.ORIENTATION_LEFT) || (player.orientation == ComputerPlayer.ORIENTATION_RIGHT)) {
-                    card.rotateMe(90);
-                    dropSpotY = dropSpotY + COMPUTER_CARD_SPREAD;
-                } else {
-                    card.rotateMe(0);
-                    dropSpotX = dropSpotX + COMPUTER_CARD_SPREAD;
-                }
-            }
         }
-
-        this.stage.addChild(this._playSpot);
     }
 
     // --------------------------------------------- private methods   

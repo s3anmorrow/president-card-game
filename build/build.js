@@ -10189,6 +10189,7 @@ class Card {
         this.overFrame = `cards/${this._suit}-${this._rank}_over`;
         this.faceDownFrame = "cards/facedown";
         this.sprite = assetManager.getSprite("sprites", this.upFrame, 0, 0);
+        this.turnMarker = assetManager.getSprite("sprites", "cards/highlight", 0, 0);
         this.sprite.on("mouseover", this.onOver, this);
         this.sprite.on("mouseout", this.onOut, this);
         this.sprite.on("click", this.onSelect, this);
@@ -10232,6 +10233,15 @@ class Card {
     showFaceDown() {
         this.sprite.gotoAndStop(this.faceDownFrame);
         this.stage.addChild(this.sprite);
+    }
+    showTurnMarker() {
+        this.turnMarker.rotation = this.sprite.rotation;
+        this.turnMarker.x = this.sprite.x;
+        this.turnMarker.y = this.sprite.y;
+        this.stage.addChildAt(this.turnMarker, 1);
+    }
+    hideTurnMarker() {
+        this.stage.removeChild(this.turnMarker);
     }
     rotateMe(degree) {
         this.sprite.rotation = degree;
@@ -10386,12 +10396,12 @@ exports.default = ComputerPlayer;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ASSET_MANIFEST = exports.TURN_DELAY = exports.COMPUTER_CARD_SPREAD = exports.PLAYER_CARD_SPREAD = exports.FRAME_RATE = exports.STAGE_HEIGHT = exports.STAGE_WIDTH = void 0;
-exports.STAGE_WIDTH = 600;
-exports.STAGE_HEIGHT = 450;
+exports.STAGE_WIDTH = 800;
+exports.STAGE_HEIGHT = 600;
 exports.FRAME_RATE = 30;
-exports.PLAYER_CARD_SPREAD = 20;
-exports.COMPUTER_CARD_SPREAD = 15;
-exports.TURN_DELAY = 200;
+exports.PLAYER_CARD_SPREAD = 33;
+exports.COMPUTER_CARD_SPREAD = 20;
+exports.TURN_DELAY = 500;
 exports.ASSET_MANIFEST = [
     {
         type: "json",
@@ -10459,7 +10469,7 @@ function startGame() {
     }
     players.forEach(player => player.reset());
     table.playersTotalCount = playerTotalCount;
-    turnIndex = 1;
+    turnIndex = 0;
     table.player = players[turnIndex];
 }
 function startRound() {
@@ -10475,6 +10485,7 @@ function startRound() {
     playType = Player_1.default.PLAYED_CARD;
     if (turnIndex == 0) {
         onTurn();
+        humanPlayer.enableMe();
     }
     else {
         turnTimer = window.setInterval(onTurn, Constants_1.TURN_DELAY);
@@ -10510,6 +10521,7 @@ function onTurn() {
         console.log("********* PLAYER TURN ********************");
         table.player = players[turnIndex];
         table.hidePass();
+        table.showTurnMarker(players);
         if (passCounter == (table.playersInGameCount - 1)) {
             console.log("=> CLEARED WITH PASS");
             table.clearTable();
@@ -10778,6 +10790,7 @@ class Player {
         this._selectedCards.forEach(selectedCard => {
             let index = this._hand.findIndex(card => card == selectedCard);
             this.deck.push(this._hand[index]);
+            this._hand[index].hideTurnMarker();
             this._hand.splice(index, 1);
         });
         this.table.refreshCards(this);
@@ -10839,13 +10852,12 @@ class Table {
         background.scaleX = Constants_1.STAGE_WIDTH;
         background.scaleY = Constants_1.STAGE_HEIGHT;
         stage.addChild(background);
-        this.sprite = assetManager.getSprite("sprites", "screens/table", 300, 200);
-        this.stage.addChild(this.sprite);
-        this.turnMarker = assetManager.getSprite("sprites", "screens/turnMarker", 0, 0);
-        this.stage.addChild(this.turnMarker);
+        this.stage.addChild(assetManager.getSprite("sprites", "screens/tableLabel1", 400, 145));
+        this.stage.addChild(assetManager.getSprite("sprites", "screens/tableLabel2", 400, 354));
+        this.stage.addChild(assetManager.getSprite("sprites", "screens/tableLabel3", 400, 376));
         this._playSpot = new createjs.Container();
-        this._playSpot.x = 220;
-        this._playSpot.y = 133;
+        this._playSpot.x = 291;
+        this._playSpot.y = 168;
         let playSpotBackground = assetManager.getSprite("sprites", "screens/playSpot", 0, 0);
         this._playSpot.addChild(playSpotBackground);
         this.stage.addChild(this._playSpot);
@@ -10855,28 +10867,6 @@ class Table {
     }
     set player(value) {
         this._player = value;
-        switch (this._player.orientation) {
-            case Player_1.default.ORIENTATION_BOTTOM:
-                this.turnMarker.rotation = 0;
-                this.turnMarker.x = 300;
-                this.turnMarker.y = 400;
-                break;
-            case Player_1.default.ORIENTATION_TOP:
-                this.turnMarker.rotation = 180;
-                this.turnMarker.x = 300;
-                this.turnMarker.y = 0;
-                break;
-            case Player_1.default.ORIENTATION_LEFT:
-                this.turnMarker.rotation = 90;
-                this.turnMarker.x = -10;
-                this.turnMarker.y = 225;
-                break;
-            case Player_1.default.ORIENTATION_RIGHT:
-                this.turnMarker.rotation = 270;
-                this.turnMarker.x = 610;
-                this.turnMarker.y = 225;
-                break;
-        }
     }
     get playSpot() {
         return this._playSpot;
@@ -10928,7 +10918,7 @@ class Table {
         if (playType != Player_1.default.PLAYED_PASS) {
             this._playedCards.forEach(card => card.hideMe());
             this._playedCards = selectedCards;
-            let dropSpotX = (155 - ((selectedCards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) - 71) / 2;
+            let dropSpotX = (207 - ((selectedCards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) - 99) / 2;
             selectedCards.forEach(card => {
                 card.positionMe(dropSpotX, 10);
                 card.playMe();
@@ -10959,47 +10949,50 @@ class Table {
         }
         return false;
     }
+    showTurnMarker(players) {
+        players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
+        this._player.hand.forEach(card => card.showTurnMarker());
+    }
     refreshCards(player) {
-        let dropSpotX = 0;
-        let dropSpotY = 340;
+        let dropSpotX;
+        let dropSpotY;
         let cards = player.hand;
         cards.sort(this.sortCompare);
-        if (player instanceof HumanPlayer_1.default) {
-            dropSpotX = Math.floor((Constants_1.STAGE_WIDTH - (((cards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) + 71)) / 2);
-            for (let card of cards) {
-                card.positionMe(dropSpotX, dropSpotY);
+        if (player.orientation == Player_1.default.ORIENTATION_LEFT) {
+            dropSpotX = 80;
+            dropSpotY = Math.floor((Constants_1.STAGE_HEIGHT - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 99)) / 2);
+        }
+        else if (player.orientation == Player_1.default.ORIENTATION_RIGHT) {
+            dropSpotX = 850;
+            dropSpotY = Math.floor((Constants_1.STAGE_HEIGHT - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 99)) / 2);
+        }
+        else if (player.orientation == Player_1.default.ORIENTATION_TOP) {
+            dropSpotX = Math.floor((Constants_1.STAGE_WIDTH - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 99)) / 2);
+            dropSpotY = -50;
+        }
+        else {
+            dropSpotX = Math.floor((Constants_1.STAGE_WIDTH - (((cards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) + 99)) / 2);
+            dropSpotY = 440;
+        }
+        for (let card of cards) {
+            card.positionMe(dropSpotX, dropSpotY);
+            card.disableMe();
+            if ((player.orientation == Player_1.default.ORIENTATION_LEFT) || (player.orientation == Player_1.default.ORIENTATION_RIGHT)) {
+                card.rotateMe(90);
+                card.showFaceDown();
+                dropSpotY = dropSpotY + Constants_1.COMPUTER_CARD_SPREAD;
+            }
+            else if (player.orientation == Player_1.default.ORIENTATION_TOP) {
+                card.rotateMe(0);
+                card.showFaceDown();
+                dropSpotX = dropSpotX + Constants_1.COMPUTER_CARD_SPREAD;
+            }
+            else {
+                card.rotateMe(0);
                 card.showFaceUp();
                 dropSpotX = dropSpotX + Constants_1.PLAYER_CARD_SPREAD;
             }
         }
-        else {
-            if (player.orientation == ComputerPlayer_1.default.ORIENTATION_LEFT) {
-                dropSpotX = 40;
-                dropSpotY = Math.floor((Constants_1.STAGE_HEIGHT - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 71)) / 2);
-            }
-            else if (player.orientation == ComputerPlayer_1.default.ORIENTATION_RIGHT) {
-                dropSpotX = 650;
-                dropSpotY = Math.floor((Constants_1.STAGE_HEIGHT - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 71)) / 2);
-            }
-            else {
-                dropSpotX = Math.floor((Constants_1.STAGE_WIDTH - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 71)) / 2);
-                dropSpotY = -40;
-            }
-            for (let card of cards) {
-                card.positionMe(dropSpotX, dropSpotY);
-                card.showFaceDown();
-                card.disableMe();
-                if ((player.orientation == ComputerPlayer_1.default.ORIENTATION_LEFT) || (player.orientation == ComputerPlayer_1.default.ORIENTATION_RIGHT)) {
-                    card.rotateMe(90);
-                    dropSpotY = dropSpotY + Constants_1.COMPUTER_CARD_SPREAD;
-                }
-                else {
-                    card.rotateMe(0);
-                    dropSpotX = dropSpotX + Constants_1.COMPUTER_CARD_SPREAD;
-                }
-            }
-        }
-        this.stage.addChild(this._playSpot);
     }
     sortCompare(a, b) {
         if (a.rank < b.rank) {
@@ -11091,7 +11084,7 @@ exports.pointHit = pointHit;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! D:\OneDrive - Nova Scotia Community College\_workspace\_working\president-card-game\node_modules\webpack-dev-server\client\index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
+__webpack_require__(/*! /Users/seanmorrow/OneDrive - Nova Scotia Community College/_workspace/_working/president-card-game/node_modules/webpack-dev-server/client/index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
 module.exports = __webpack_require__(/*! ./src/Game.ts */"./src/Game.ts");
 
 
