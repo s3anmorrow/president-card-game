@@ -1,7 +1,6 @@
 import Card from "./Card";
 import Table from "./Table";
 import { randomMe } from "./Toolkit";
-import { TURN_DELAY } from "./Constants";
 import AssetManager from "./AssetManager";
 
 export default abstract class Player {
@@ -10,6 +9,7 @@ export default abstract class Player {
     public static STATE_CARDS_NOT_SELECTED:number = 2;
     public static STATE_NOT_PLAYING:number = 3;
     public static STATE_DISABLED:number = 4;
+    public static STATE_OUT:number = 3;
 
     public static ORIENTATION_LEFT:number = 1;
     public static ORIENTATION_TOP:number = 2;
@@ -25,6 +25,7 @@ export default abstract class Player {
     public static PLAYED_PASS:number = 0
     public static PLAYED_TWO:number = 1;
     public static PLAYED_CARD:number = 2;
+    public static PLAYED_NONE:number = 3;
 
     protected stage:createjs.StageGL;
     protected deck:Card[];
@@ -43,6 +44,7 @@ export default abstract class Player {
         this.stage = stage;
         this.deck = deck;
         this.table = table;
+        this._state = Player.STATE_NOT_PLAYING;
         this._status = Player.STATUS_NEUTRAL;
         this._orientation = Player.ORIENTATION_BOTTOM;
 
@@ -55,8 +57,16 @@ export default abstract class Player {
         return this._hand;
     }
 
+    public get cardCount():number {
+        return this._hand.length;
+    }
+
     public get state():number {
         return this._state;
+    }
+
+    public set state(value:number) {
+        this._state = value;
     }
 
     public get selectedCards():Card[] {
@@ -97,9 +107,9 @@ export default abstract class Player {
         this._hand = [];
     }
 
-    public takeTurn():number {
-        // play the selected cards onto the table
-        let playType:number = this.table.playCards();
+    public selectCards():void {
+        // // play the selected cards onto the table
+        // let playType:number = this.table.playCards();
         
         // remove played cards from hand
         this._selectedCards.forEach(selectedCard => {
@@ -109,13 +119,16 @@ export default abstract class Player {
             // remove card from hand
             this._hand.splice(index,1);
         });
-
+                
         // reposition the cards now that cards have been played
         this.table.refreshCards(this);
-        // no selected cards now
-        this._selectedCards = [];
+        // // no selected cards now
+        // this._selectedCards = [];
 
-        return playType;
+        console.log("Player's selected cards:");
+        console.log(this._selectedCards);
+
+        // return playType;
     }
 
     public reset():void {

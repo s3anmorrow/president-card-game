@@ -10295,14 +10295,14 @@ class ComputerPlayer extends Player_1.default {
         return count;
     }
     pass() {
-        this.cursor.x = 290;
-        this.cursor.y = 192;
-        this.stage.addChild(this.cursor);
+        this.cursor.x = 77;
+        this.cursor.y = 58;
+        this.table.playSpot.addChild(this.cursor);
         this.cursorDelayTimer = window.setTimeout(() => {
-            this.stage.removeChild(this.cursor);
+            this.table.playSpot.removeChild(this.cursor);
         }, Constants_1.TURN_DELAY - 250);
     }
-    takeTurn() {
+    selectCards() {
         const LOW_CARD_THRESHOLD = 4;
         const HIGH_CARD_THRESHOLD = 6;
         let playedCount = this.table.playedCards.length;
@@ -10371,12 +10371,15 @@ class ComputerPlayer extends Player_1.default {
                 }
             }
             else {
-                this.pass();
+                if ((twoCount > 0) && (Toolkit_1.probabilityMe(60))) {
+                    this._selectedCards = this._hand.slice(0, 1);
+                }
+                else {
+                    this.pass();
+                }
             }
         }
-        console.log("Computer's selected cards:");
-        console.log(this._selectedCards);
-        return super.takeTurn();
+        super.selectCards();
     }
 }
 exports.default = ComputerPlayer;
@@ -10443,23 +10446,26 @@ let canvas;
 let assetManager;
 let table;
 let humanPlayer;
-let computerPlayers;
+let computerPlayer1;
+let computerPlayer2;
+let computerPlayer3;
 let players;
 let deck;
 let playerCount = 4;
 let turnIndex = 0;
 let turnDelayTimer;
+let playType;
 function startGame() {
     if (playerCount == 3) {
-        computerPlayers[0].orientation = Player_1.default.ORIENTATION_LEFT;
-        computerPlayers[1].orientation = Player_1.default.ORIENTATION_RIGHT;
-        players = [humanPlayer, computerPlayers[0], computerPlayers[1]];
+        computerPlayer1.orientation = Player_1.default.ORIENTATION_LEFT;
+        computerPlayer2.orientation = Player_1.default.ORIENTATION_RIGHT;
+        players = [humanPlayer, computerPlayer1, computerPlayer2];
     }
     else {
-        computerPlayers[0].orientation = Player_1.default.ORIENTATION_LEFT;
-        computerPlayers[1].orientation = Player_1.default.ORIENTATION_TOP;
-        computerPlayers[2].orientation = Player_1.default.ORIENTATION_RIGHT;
-        players = [humanPlayer, computerPlayers[0], computerPlayers[1], computerPlayers[2]];
+        computerPlayer1.orientation = Player_1.default.ORIENTATION_LEFT;
+        computerPlayer2.orientation = Player_1.default.ORIENTATION_TOP;
+        computerPlayer3.orientation = Player_1.default.ORIENTATION_RIGHT;
+        players = [humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3];
     }
     players.forEach(player => player.reset());
     turnIndex = 0;
@@ -10471,35 +10477,20 @@ function startRound() {
         if (deck.length <= 0)
             break;
     }
+    playType = Player_1.default.PLAYED_CARD;
     if (turnIndex == 0)
         onPlayerTurn();
     else
         turnDelayTimer = window.setInterval(onPlayerTurn, Constants_1.TURN_DELAY);
 }
-function onPlayerTurn() {
-    table.player = players[turnIndex];
-    if (table.playerStartingRound == players[turnIndex]) {
-        console.log("STARTING new round!");
-        table.clearTable();
-    }
-    if (players[turnIndex] instanceof ComputerPlayer_1.default) {
-        console.log("********* COMPUTER'S TURN ********************");
-        if (players[turnIndex].takeTurn() != Player_1.default.PLAYED_TWO) {
+function nextPlayer() {
+    if (playType != Player_1.default.PLAYED_TWO) {
+        if (++turnIndex == playerCount)
+            turnIndex = 0;
+        while (players[turnIndex].state == Player_1.default.STATE_OUT) {
             if (++turnIndex == playerCount)
                 turnIndex = 0;
         }
-    }
-    else {
-        console.log("********* HUMAN'S TURN ********************");
-        humanPlayer.enableMe();
-        window.clearInterval(turnDelayTimer);
-        table.playSpot.on("cardsSelected", (e) => {
-            if (players[turnIndex].takeTurn() != Player_1.default.PLAYED_TWO) {
-                if (++turnIndex == playerCount)
-                    turnIndex = 0;
-                turnDelayTimer = window.setInterval(onPlayerTurn, Constants_1.TURN_DELAY);
-            }
-        }, this, true);
     }
 }
 function onReady(e) {
@@ -10513,14 +10504,39 @@ function onReady(e) {
         deck.push(new Card_1.default(stage, assetManager, table, "S", n));
     }
     humanPlayer = new HumanPlayer_1.default(stage, assetManager, deck, table);
-    computerPlayers = [];
-    for (let n = 0; n < Constants_1.MAX_COMPUTER_PLAYERS; n++)
-        computerPlayers.push(new ComputerPlayer_1.default(stage, assetManager, deck, humanPlayer, table));
+    computerPlayer1 = new ComputerPlayer_1.default(stage, assetManager, deck, humanPlayer, table);
+    computerPlayer2 = new ComputerPlayer_1.default(stage, assetManager, deck, humanPlayer, table);
+    computerPlayer3 = new ComputerPlayer_1.default(stage, assetManager, deck, humanPlayer, table);
     startGame();
     startRound();
     createjs.Ticker.framerate = Constants_1.FRAME_RATE;
     createjs.Ticker.on("tick", onTick);
     console.log(">> game ready");
+}
+function onPlayerTurn() {
+    table.player = players[turnIndex];
+    if ((playType == Player_1.default.PLAYED_TWO) || (table.playerStartingRound == players[turnIndex])) {
+        console.log("STARTING new round!");
+        table.clearTable();
+        playType = Player_1.default.PLAYED_NONE;
+    }
+    else if (players[turnIndex] instanceof ComputerPlayer_1.default) {
+        console.log("********* COMPUTER'S TURN ********************");
+        players[turnIndex].selectCards();
+        playType = table.playCards();
+        nextPlayer();
+    }
+    else {
+        console.log("********* HUMAN'S TURN ********************");
+        window.clearInterval(turnDelayTimer);
+        humanPlayer.enableMe();
+        table.playSpot.on("cardsSelected", (e) => {
+            players[turnIndex].selectCards();
+            playType = table.playCards();
+            nextPlayer();
+            turnDelayTimer = window.setInterval(onPlayerTurn, Constants_1.TURN_DELAY);
+        }, this, true);
+    }
 }
 function onTick(e) {
     document.getElementById("fps").innerHTML = String(createjs.Ticker.getMeasuredFPS());
@@ -10589,6 +10605,7 @@ class HumanPlayer extends Player_1.default {
             this.disableMe();
         }
         else if (this._state == Player_1.default.STATE_CARDS_NOT_SELECTED) {
+            this._selectedCards = [];
             this.disableMe();
         }
         this.playSpot.dispatchEvent(this.eventHumanTookTurn);
@@ -10661,6 +10678,7 @@ class Player {
         this.stage = stage;
         this.deck = deck;
         this.table = table;
+        this._state = Player.STATE_NOT_PLAYING;
         this._status = Player.STATUS_NEUTRAL;
         this._orientation = Player.ORIENTATION_BOTTOM;
         this.cursor = assetManager.getSprite("sprites", "cursors/pass", 0, 0);
@@ -10668,8 +10686,14 @@ class Player {
     get hand() {
         return this._hand;
     }
+    get cardCount() {
+        return this._hand.length;
+    }
     get state() {
         return this._state;
+    }
+    set state(value) {
+        this._state = value;
     }
     get selectedCards() {
         return this._selectedCards;
@@ -10698,16 +10722,15 @@ class Player {
             deck.push(card);
         this._hand = [];
     }
-    takeTurn() {
-        let playType = this.table.playCards();
+    selectCards() {
         this._selectedCards.forEach(selectedCard => {
             let index = this._hand.findIndex(card => card == selectedCard);
             this.deck.push(this._hand[index]);
             this._hand.splice(index, 1);
         });
         this.table.refreshCards(this);
-        this._selectedCards = [];
-        return playType;
+        console.log("Player's selected cards:");
+        console.log(this._selectedCards);
     }
     reset() {
         this._state = Player.STATE_NOT_PLAYING;
@@ -10720,6 +10743,7 @@ Player.STATE_CARDS_SELECTED = 1;
 Player.STATE_CARDS_NOT_SELECTED = 2;
 Player.STATE_NOT_PLAYING = 3;
 Player.STATE_DISABLED = 4;
+Player.STATE_OUT = 3;
 Player.ORIENTATION_LEFT = 1;
 Player.ORIENTATION_TOP = 2;
 Player.ORIENTATION_RIGHT = 3;
@@ -10732,6 +10756,7 @@ Player.STATUS_ASSHOLE = -2;
 Player.PLAYED_PASS = 0;
 Player.PLAYED_TWO = 1;
 Player.PLAYED_CARD = 2;
+Player.PLAYED_NONE = 3;
 
 
 /***/ }),
@@ -10753,7 +10778,9 @@ const Constants_1 = __webpack_require__(/*! ./Constants */ "./src/Constants.ts")
 class Table {
     constructor(stage, assetManager) {
         this.stage = stage;
+        this._playerStartingRound = null;
         this._playedCards = [];
+        this._playersOut = [];
         let background = assetManager.getSprite("sprites", "screens/background", 0, 0);
         background.scaleX = Constants_1.STAGE_WIDTH;
         background.scaleY = Constants_1.STAGE_HEIGHT;
@@ -10781,7 +10808,7 @@ class Table {
                 this.turnPointer.y = 100;
                 break;
             case Player_1.default.ORIENTATION_LEFT:
-                this.turnPointer.x = 10;
+                this.turnPointer.x = 100;
                 this.turnPointer.y = 150;
                 break;
             case Player_1.default.ORIENTATION_RIGHT:
@@ -10799,20 +10826,32 @@ class Table {
     get playedCards() {
         return this._playedCards;
     }
+    get playersOut() {
+        return this._playersOut;
+    }
+    reset() {
+        this.clearTable();
+        this._playersOut = [];
+        this._playerStartingRound = null;
+    }
     clearTable() {
+        console.log("CLEARING TABLE");
         this._playedCards.forEach(card => card.hideMe());
         this._playedCards = [];
+        this._playerStartingRound = null;
     }
     playCards() {
-        this._playerStartingRound = this._player;
         let selectedCards = this._player.selectedCards;
         let playType = Player_1.default.PLAYED_CARD;
         if (selectedCards.length == 0)
             playType = Player_1.default.PLAYED_PASS;
         else if (selectedCards[0].rank == 2)
             playType = Player_1.default.PLAYED_TWO;
-        if (playType == Player_1.default.PLAYED_CARD) {
-            this.clearTable();
+        if ((playType == Player_1.default.PLAYED_CARD) || (this._playerStartingRound == null)) {
+            this._playerStartingRound = this._player;
+        }
+        if (playType != Player_1.default.PLAYED_PASS) {
+            this._playedCards.forEach(card => card.hideMe());
             this._playedCards = selectedCards;
             let dropSpotX = (155 - ((selectedCards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) - 71) / 2;
             selectedCards.forEach(card => {
@@ -10821,11 +10860,11 @@ class Table {
                 dropSpotX = dropSpotX + Constants_1.PLAYER_CARD_SPREAD;
             });
         }
-        else if (playType == Player_1.default.PLAYED_TWO) {
-            this.clearTable();
-        }
-        else {
-            console.log(":( Player Passed");
+        if (this._player.hand.length == 0) {
+            this._player.state = Player_1.default.STATE_OUT;
+            this._playersOut.push(this._player);
+            console.log("*** PLAYER OUT");
+            this._playerStartingRound = null;
         }
         return playType;
     }
@@ -10972,7 +11011,7 @@ exports.pointHit = pointHit;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /Users/seanmorrow/OneDrive - Nova Scotia Community College/_workspace/_working/president/node_modules/webpack-dev-server/client/index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
+__webpack_require__(/*! D:\OneDrive - Nova Scotia Community College\_workspace\_working\president-card-game\node_modules\webpack-dev-server\client\index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
 module.exports = __webpack_require__(/*! ./src/Game.ts */"./src/Game.ts");
 
 

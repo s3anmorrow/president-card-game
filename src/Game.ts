@@ -1,3 +1,9 @@
+// TODO resetting game
+// TODO start screen
+// TODO setting status of players after round
+// TODO picking lowest cards for human
+// TODO points system?
+
 // createjs typescript definition for TypeScript
 /// <reference path="./../node_modules/@types/createjs/index.d.ts" />
 
@@ -22,7 +28,9 @@ let assetManager:AssetManager;
 // game objects
 let table:Table;
 let humanPlayer:HumanPlayer;
-let computerPlayers:ComputerPlayer[];
+let computerPlayer1:ComputerPlayer;
+let computerPlayer2:ComputerPlayer;
+let computerPlayer3:ComputerPlayer;
 let players:Player[];
 let deck:Card[];
 
@@ -30,131 +38,65 @@ let deck:Card[];
 let playerCount:number = 4;
 let turnIndex:number = 0;
 let turnDelayTimer:number;
+let playType:number;
 
 // --------------------------------------------------- private methods
 function startGame():void {
+    // initialization
     if (playerCount == 3) {           
-        computerPlayers[0].orientation = Player.ORIENTATION_LEFT;
-        computerPlayers[1].orientation = Player.ORIENTATION_RIGHT;
-        players = [humanPlayer, computerPlayers[0], computerPlayers[1]];
+        computerPlayer1.orientation = Player.ORIENTATION_LEFT;
+        computerPlayer2.orientation = Player.ORIENTATION_RIGHT;
+        players = [humanPlayer, computerPlayer1, computerPlayer2];
     } else {
-        computerPlayers[0].orientation = Player.ORIENTATION_LEFT;
-        computerPlayers[1].orientation = Player.ORIENTATION_TOP;
-        computerPlayers[2].orientation = Player.ORIENTATION_RIGHT;
-        players = [humanPlayer, computerPlayers[0], computerPlayers[1], computerPlayers[2]];
+        computerPlayer1.orientation = Player.ORIENTATION_LEFT;
+        computerPlayer2.orientation = Player.ORIENTATION_TOP;
+        computerPlayer3.orientation = Player.ORIENTATION_RIGHT;
+        players = [humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3];
     }
-
+    
     // resetting for new game
     players.forEach(player => player.reset());    
-
+    
     // when game first starts, randomly pick who goes first
     // turnIndex = randomMe(0, players.length - 1);
     turnIndex = 0;
-    // table.playerTakingTurn = players[turnIndex];
-
+    
 }
 
 function startRound():void {
+    // initialization
+    
+    
     // ?????????????????????????
     // sort players in order of status (president / vice / vice-asshole / asshole)
     // ...
-
-
-
+    
+    
+    
     // deal cards to all players
     while (true) {
         for (let n:number=0; n<playerCount; n++) players[n].dealCard();    
         if (deck.length <= 0) break;
     }
-
-    // start the turns if not currently human's turn
+    
+    // start the turn timer if not currently human's turn
+    playType = Player.PLAYED_CARD;
     if (turnIndex == 0) onPlayerTurn();
     else turnDelayTimer = window.setInterval(onPlayerTurn, TURN_DELAY);
+    
+}
 
+function nextPlayer():void {
+    // move index to next player (or find next player that is still in the game) as long as no two dropped
+    if (playType != Player.PLAYED_TWO) {
+        if (++turnIndex == playerCount) turnIndex = 0;
+        while (players[turnIndex].state == Player.STATE_OUT) {
+            if (++turnIndex == playerCount) turnIndex = 0;
+        }
+    }
 }
 
 // --------------------------------------------------- event handlers
-function onPlayerTurn() {
-    // set table to currently playing player
-    table.player = players[turnIndex];
-
-    // has the current player won the round?
-    if (table.playerStartingRound == players[turnIndex]) {
-        console.log("STARTING new round!");
-        table.clearTable();
-    }    
-
-    if (players[turnIndex] instanceof ComputerPlayer) {
-        console.log("********* COMPUTER'S TURN ********************");
-        
-        if (players[turnIndex].takeTurn() != Player.PLAYED_TWO) {
-            if (++turnIndex == playerCount) turnIndex = 0;
-        }
-
-    } else {
-        console.log("********* HUMAN'S TURN ********************");
-        // wait for human to take turn (enable for interactivity)
-        humanPlayer.enableMe();
-        // stop turns
-        window.clearInterval(turnDelayTimer);
-        // listen for click on playspot on table
-        table.playSpot.on("cardsSelected", (e:createjs.Event) => {
-            if (players[turnIndex].takeTurn() != Player.PLAYED_TWO) {
-                if (++turnIndex == playerCount) turnIndex = 0;
-                turnDelayTimer = window.setInterval(onPlayerTurn, TURN_DELAY);
-            }
-        }, this, true);
-    }
-
-}
-
-
-// function onGameEvent(e:createjs.Event):void {
-//     switch (e.type) {
-//         case "takingTurn":
-//             // increment index to next player
-//             if (++turnIndex == playerCount) turnIndex = 0;
-//             // update table to new player taking turn
-//             table.playerTakingTurn = players[turnIndex];
-//             // is this player a computer?
-//             if (players[turnIndex] instanceof ComputerPlayer) {
-//                 console.log("********* COMPUTER'S TURN ********************");
-//                 // have computer take turn automatically
-//                 players[turnIndex].takeTurn();
-//             } else {
-//                 console.log("********* HUMAN'S TURN ********************");
-//                 // wait for human to take turn (enable for interactivity)
-//                 humanPlayer.enableMe();
-//             }
-//             console.log("************ turn ended *******************");
-
-
-//             if (table.playerStartingRound == players[turnIndex]) {
-//                 console.log("STARTING new round!");
-//                 table.reset();
-//                 if (--turnIndex < 0) turnIndex = playerCount - 1;
-//             }
-
-
-
-//             break;
-
-//         case "playerDroppedTwo":
-//             // current player takes another turn
-//             turnIndex--;
-
-//             console.log("!!! NEW ROUND");
-
-//             break;
-//         case "roundEnded":
-
-//             break;
-//         case "gameOver":
-
-//             break;
-//     }
-// }
-
 function onReady(e:createjs.Event):void {
     console.log(">> adding sprites to game");
 
@@ -171,25 +113,50 @@ function onReady(e:createjs.Event):void {
     // construct human player
     humanPlayer = new HumanPlayer(stage, assetManager, deck, table);
     // construct computer players - need additional access to humanPlayer and table for AI
-    computerPlayers = [];
-    for (let n:number=0; n<MAX_COMPUTER_PLAYERS; n++) computerPlayers.push(new ComputerPlayer(stage, assetManager, deck, humanPlayer, table));
+    computerPlayer1 = new ComputerPlayer(stage, assetManager, deck, humanPlayer, table);
+    computerPlayer2 = new ComputerPlayer(stage, assetManager, deck, humanPlayer, table);
+    computerPlayer3 = new ComputerPlayer(stage, assetManager, deck, humanPlayer, table);
 
     // ??????????????
     startGame();
     startRound();
     // ??????????????
 
-    // stage.on("humanTookTurn", onGameEvent);
-    // stage.on("computerTurn", onGameEvent);
-    // stage.on("playerDroppedTwo", onGameEvent);
-    // stage.on("computerTurnTaken", onGameEvent);
-
     // startup the ticker
     createjs.Ticker.framerate = FRAME_RATE;
     createjs.Ticker.on("tick", onTick);        
     console.log(">> game ready");
-}      
+}     
 
+function onPlayerTurn() { 
+    // set table to currently playing player
+    table.player = players[turnIndex];
+    
+    // has the current player won the round by dropping a two OR everyone passing on last turn?
+    if ((playType == Player.PLAYED_TWO) || (table.playerStartingRound == players[turnIndex])) {
+        console.log("STARTING new round!");
+        table.clearTable();
+        playType = Player.PLAYED_NONE;
+
+    } else if (players[turnIndex] instanceof ComputerPlayer) {
+        console.log("********* COMPUTER'S TURN ********************");       
+        players[turnIndex].selectCards();
+        playType = table.playCards();
+        nextPlayer();
+    } else {
+        console.log("********* HUMAN'S TURN ********************");
+        // wait for human to take turn (enable for interactivity)
+        window.clearInterval(turnDelayTimer);
+        humanPlayer.enableMe();
+        // listen for click on playspot on table
+        table.playSpot.on("cardsSelected", (e:createjs.Event) => {
+            players[turnIndex].selectCards();
+            playType = table.playCards();
+            nextPlayer();
+            turnDelayTimer = window.setInterval(onPlayerTurn, TURN_DELAY);
+        }, this, true);
+    }   
+}
 
 function onTick(e:createjs.Event):void {
     // TESTING FPS

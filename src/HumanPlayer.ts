@@ -48,12 +48,13 @@ export default class HumanPlayer extends Player {
     private onClick():void {
         if (this._state == Player.STATE_DISABLED) return;
         if (this._state == Player.STATE_CARDS_SELECTED) {
-            // check to make sure cards selected are valid
+            // human playing is playing cards - check if selected cards are valid?
             if (this.table.validateCards() == false) return;
             // player has made a selection for his/her turn
             this.disableMe();
         } else if (this._state == Player.STATE_CARDS_NOT_SELECTED) {
-            // this.pass();
+            this._selectedCards = [];
+            // human player is passing
             this.disableMe();
         }
 
