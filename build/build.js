@@ -10189,7 +10189,7 @@ class Card {
         this.overFrame = `cards/${this._suit}-${this._rank}_over`;
         this.faceDownFrame = "cards/facedown";
         this.sprite = assetManager.getSprite("sprites", this.upFrame, 0, 0);
-        this.turnMarker = assetManager.getSprite("sprites", "cards/highlight", 0, 0);
+        this.turnMarker = assetManager.getSprite("sprites", "cards/turnMarker", 0, 0);
         this.sprite.on("mouseover", this.onOver, this);
         this.sprite.on("mouseout", this.onOut, this);
         this.sprite.on("click", this.onSelect, this);
@@ -10235,7 +10235,6 @@ class Card {
         this.stage.addChild(this.sprite);
     }
     showTurnMarker() {
-        this.turnMarker.rotation = this.sprite.rotation;
         this.turnMarker.x = this.sprite.x;
         this.turnMarker.y = this.sprite.y;
         this.stage.addChildAt(this.turnMarker, 1);
@@ -10245,6 +10244,7 @@ class Card {
     }
     rotateMe(degree) {
         this.sprite.rotation = degree;
+        this.turnMarker.rotation = degree;
     }
     playMe() {
         this.rotateMe(0);
@@ -10918,9 +10918,9 @@ class Table {
         if (playType != Player_1.default.PLAYED_PASS) {
             this._playedCards.forEach(card => card.hideMe());
             this._playedCards = selectedCards;
-            let dropSpotX = (207 - ((selectedCards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) - 99) / 2;
+            let dropSpotX = (218 - ((selectedCards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) - 99) / 2;
             selectedCards.forEach(card => {
-                card.positionMe(dropSpotX, 10);
+                card.positionMe(dropSpotX, 15);
                 card.playMe();
                 dropSpotX = dropSpotX + Constants_1.PLAYER_CARD_SPREAD;
             });

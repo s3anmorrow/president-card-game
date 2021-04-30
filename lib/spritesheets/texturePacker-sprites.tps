@@ -314,7 +314,7 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
-            <key type="filename">cards/highlight.png</key>
+            <key type="filename">cards/turnMarker.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.0695652,0.0529801</point_f>
@@ -323,9 +323,9 @@
                 <key>scale9Enabled</key>
                 <false/>
                 <key>scale9Borders</key>
-                <rect>27,36,53,71</rect>
+                <rect>29,38,57,75</rect>
                 <key>scale9Paddings</key>
-                <rect>27,36,53,71</rect>
+                <rect>29,38,57,75</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
@@ -491,51 +491,6 @@
                 <rect>56,2,111,3</rect>
                 <key>scale9Paddings</key>
                 <rect>56,2,111,3</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
-            <key type="filename">screens/turnBackground.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>0.5,0.5</point_f>
-                <key>spriteScale</key>
-                <double>1</double>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>8,36,15,71</rect>
-                <key>scale9Paddings</key>
-                <rect>8,36,15,71</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
-            <key type="filename">screens/turnLeft.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>1,0.0529801</point_f>
-                <key>spriteScale</key>
-                <double>1</double>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>3,36,6,71</rect>
-                <key>scale9Paddings</key>
-                <rect>3,36,6,71</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
-            <key type="filename">screens/turnRight.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>0.5,0.5</point_f>
-                <key>spriteScale</key>
-                <double>1</double>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>3,36,6,71</rect>
-                <key>scale9Paddings</key>
-                <rect>3,36,6,71</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>

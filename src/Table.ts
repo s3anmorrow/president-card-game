@@ -130,9 +130,9 @@ export default class Table {
             this._playedCards = selectedCards;
 
             // positioning selected cards in playspace
-            let dropSpotX:number = (207 - ((selectedCards.length - 1) * PLAYER_CARD_SPREAD) - 99) / 2;
+            let dropSpotX:number = (218 - ((selectedCards.length - 1) * PLAYER_CARD_SPREAD) - 99) / 2;
             selectedCards.forEach(card => {
-                card.positionMe(dropSpotX, 10);
+                card.positionMe(dropSpotX, 15);
                 card.playMe();
                 dropSpotX = dropSpotX + PLAYER_CARD_SPREAD;
             });

@@ -240,13 +240,13 @@
     "cards/S-9_over": { "frames": [111] },
     "cards/S-9_up": { "frames": [112] },
     "cards/facedown": { "frames": [113] },
-    "cards/highlight": { "frames": [114] },
+    "cards/turnMarker": { "frames": [114] },
     "screens/playSpot": { "frames": [115] },
     "screens/instructions": { "frames": [116] }
 },
 
 "texturepacker": [
-        "SmartUpdateHash: $TexturePacker:SmartUpdate:dc5ee72940696c57d0b9bfb3f76d2191:c06e4852ca111ede736a27df01c62e09:1eabdf11f75e3a4fe3147baf7b5be24b$",
+        "SmartUpdateHash: $TexturePacker:SmartUpdate:52244df9f395965631510f684497edf4:c06e4852ca111ede736a27df01c62e09:1eabdf11f75e3a4fe3147baf7b5be24b$",
         "Created with TexturePacker (https://www.codeandweb.com/texturepacker) for EaselJS"
 ]
 

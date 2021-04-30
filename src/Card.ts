@@ -95,7 +95,6 @@ export default class Card {
     }
 
     public showTurnMarker():void {
-        this.turnMarker.rotation = this.sprite.rotation;
         this.turnMarker.x = this.sprite.x;
         this.turnMarker.y = this.sprite.y;
         this.stage.addChildAt(this.turnMarker, 1);
@@ -107,6 +106,7 @@ export default class Card {
 
     public rotateMe(degree:number):void {
         this.sprite.rotation = degree;
+        this.turnMarker.rotation = degree;
     }
 
     public playMe():void {
