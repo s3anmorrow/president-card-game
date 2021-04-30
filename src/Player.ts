@@ -34,13 +34,17 @@ export default abstract class Player {
     protected cursor:createjs.Sprite;
 
     protected _state:number;
+    protected _name:string;
+    protected _score:number;
     protected _hand:Card[];
     protected _orientation:number;
     protected _selectedCards:Card[];
     protected _status:number;
 
-    constructor(stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], table:Table) {
+    constructor(name:string, stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], table:Table) {
         this.reset();
+        this._name = name;
+        this._score = 0;
         this.stage = stage;
         this.deck = deck;
         this.table = table;
@@ -53,6 +57,10 @@ export default abstract class Player {
     }
 
     // -------------------------------------------------- gets/sets
+    public get name():string {
+        return this._name;
+    }
+
     public get hand():Card[] {
         return this._hand;
     }
@@ -87,6 +95,10 @@ export default abstract class Player {
 
     public get orientation():number {
         return this._orientation;
+    }
+
+    public get score():number {
+        return this._score;
     }
 
     // -------------------------------------------------- public methods
@@ -134,8 +146,13 @@ export default abstract class Player {
         console.log(this._selectedCards);
     }
 
+    public updateScore():void {
+        this._score = this._score + this._status;
+        if (this._score < 0) this._score = 0;
+    }
+
     public reset():void {
-        // all players are assumed not playing until dealt cards
+        this._score = 0;
         this._state = Player.STATE_NOT_PLAYING;
         this._status = Player.STATUS_NEUTRAL;
         this._hand = [];

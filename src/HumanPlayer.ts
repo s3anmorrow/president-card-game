@@ -8,8 +8,8 @@ export default class HumanPlayer extends Player {
     private playSpot:createjs.Container;
     private eventCardsSelected:createjs.Event;
 
-    constructor(stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], table:Table) {
-        super(stage, assetManager, deck, table);
+    constructor(name:string, stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], table:Table) {
+        super(name, stage, assetManager, deck, table);
 
         // initialialization
         this.playSpot = table.playSpot;

@@ -1,0 +1,39 @@
+{
+
+"images": [
+    "glyphs.png"
+],
+
+"framerate": 30,
+"frames": [
+    [1, 1, 12, 16, 0, 0, 1],
+    [15, 1, 14, 16, 0, 0, 1],
+    [31, 1, 15, 16, 0, 0, 1],
+    [48, 1, 15, 16, 0, 0, 1],
+    [1, 19, 15, 16, 0, 0, 1],
+    [18, 19, 15, 16, 0, 0, 1],
+    [35, 19, 15, 16, 0, 0, 1],
+    [1, 37, 15, 16, 0, 0, 1],
+    [18, 37, 15, 16, 0, 0, 1],
+    [35, 37, 15, 16, 0, 0, 1]
+],
+
+"animations": {
+    "0": { "frames": [2] },
+    "1": { "frames": [0] },
+    "2": { "frames": [3] },
+    "3": { "frames": [4] },
+    "4": { "frames": [5] },
+    "5": { "frames": [6] },
+    "6": { "frames": [1] },
+    "7": { "frames": [7] },
+    "8": { "frames": [8] },
+    "9": { "frames": [9] }
+},
+
+"texturepacker": [
+        "SmartUpdateHash: $TexturePacker:SmartUpdate:d985fe0da8adb07741b63466c7d755bb:6875b38f21eaa5184f988e2bdf870d4e:a70807ce2de67574c873d583b818abb7$",
+        "Created with TexturePacker (https://www.codeandweb.com/texturepacker) for EaselJS"
+]
+
+}

@@ -7,7 +7,6 @@ import { PLAYER_CARD_SPREAD, COMPUTER_CARD_SPREAD, STAGE_WIDTH, STAGE_HEIGHT } f
 
 export default class Table {
     private stage:createjs.StageGL;
-    private sprite:createjs.Sprite;    
     private statusCounter:number;
     private statusRankings:number[];
     private passIndicator:createjs.Sprite;    
@@ -195,8 +194,13 @@ export default class Table {
         let dropSpotX:number;
         let dropSpotY:number;
         let cards:Card[] = player.hand;
+
         // sort cards
-        cards.sort(this.sortCompare);
+        cards.sort((a:Card, b:Card) => {
+            if (a.rank < b.rank) return -1;
+            else if (a.rank > b.rank) return 1;
+            else return 0;
+        });
 
         // calculating card x drop spot so all cards are centered on stage
         if (player.orientation == Player.ORIENTATION_LEFT) {
@@ -232,15 +236,4 @@ export default class Table {
             }
         }
     }
-
-    // --------------------------------------------- private methods   
-    private sortCompare(a:Card, b:Card):number {
-        if (a.rank < b.rank) {
-            return -1;
-        } else if (a.rank > b.rank) {
-            return 1;
-        } else {
-            return 0;
-        }
-    }   
 }

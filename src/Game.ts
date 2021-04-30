@@ -12,6 +12,7 @@ import "createjs";
 // importing game constants
 import { STAGE_WIDTH, STAGE_HEIGHT, FRAME_RATE, ASSET_MANIFEST, TURN_DELAY } from "./Constants";
 import AssetManager from "./AssetManager";
+import ScreenManager from "./ScreenManager";
 import Card from "./Card";
 import HumanPlayer from "./HumanPlayer";
 import ComputerPlayer from "./ComputerPlayer";
@@ -22,10 +23,9 @@ import Table from "./Table";
 let stage:createjs.StageGL;
 let canvas:HTMLCanvasElement;
 
-// assetmanager object
-let assetManager:AssetManager;
-
 // game objects
+let assetManager:AssetManager;
+let screenManager:ScreenManager;
 let table:Table;
 let humanPlayer:HumanPlayer;
 let computerPlayer1:ComputerPlayer;
@@ -186,23 +186,30 @@ function onGameEvent(e:createjs.Event):void {
             break;
 
         case "gameOver":
-            console.log("GAME IS OVER!");
             gameOn = false;
             window.clearInterval(turnTimer);
             table.showLoser(players);
-
-            // ????????? display summary panel
-            console.table(players);
-
+            // sort players in order of status for next game / summary screen
+            players.sort((a:Player, b:Player) => {
+                if (a.status > b.status) return -1;
+                else if (a.status < b.status) return 1;
+                else return 0;
+            });
+            // update score for each player
+            players.forEach(player => player.updateScore());
             table.hideMe();
-
-
+            screenManager.showSummary(players);
+            
+            console.table(players);
         
+            break;
+        case "newGame":
+            console.log("NEW GAME");
+
             break;
         case "gameFinished":
                 
             break;
-
     }
 }
 
@@ -213,22 +220,25 @@ function onGameEvent(e:createjs.Event):void {
 function onReady(e:createjs.Event):void {
     console.log(">> adding sprites to game");
 
+    // construct ScreenManager
+    screenManager = new ScreenManager(stage, assetManager);    
     // construct Table
     table = new Table(stage, assetManager);
     // construct deck of Cards
     deck = [];
-    for (let n:number=2; n<=14; n++) {
+    // for (let n:number=2; n<=14; n++) {
+    for (let n:number=2; n<=10; n++) {
         deck.push(new Card(stage, assetManager, table, "C",n));
-        deck.push(new Card(stage, assetManager, table, "H",n));
-        deck.push(new Card(stage, assetManager, table, "D",n));
-        deck.push(new Card(stage, assetManager, table, "S",n));
+        // deck.push(new Card(stage, assetManager, table, "H",n));
+        // deck.push(new Card(stage, assetManager, table, "D",n));
+        // deck.push(new Card(stage, assetManager, table, "S",n));
     }
     // construct human player
-    humanPlayer = new HumanPlayer(stage, assetManager, deck, table);
+    humanPlayer = new HumanPlayer("You", stage, assetManager, deck, table);
     // construct computer players - need additional access to humanPlayer and table for AI
-    computerPlayer1 = new ComputerPlayer(stage, assetManager, deck, humanPlayer, table);
-    computerPlayer2 = new ComputerPlayer(stage, assetManager, deck, humanPlayer, table);
-    computerPlayer3 = new ComputerPlayer(stage, assetManager, deck, humanPlayer, table);
+    computerPlayer1 = new ComputerPlayer("Shifty", stage, assetManager, deck, humanPlayer, table);
+    computerPlayer2 = new ComputerPlayer("Janky", stage, assetManager, deck, humanPlayer, table);
+    computerPlayer3 = new ComputerPlayer("Clyde", stage, assetManager, deck, humanPlayer, table);
 
     // ??????????????
     startGame();
@@ -238,6 +248,7 @@ function onReady(e:createjs.Event):void {
     stage.on("gameOver", onGameEvent);
     stage.on("humanOut", onGameEvent);
     stage.on("cardsSelected", onGameEvent);
+    stage.on("newGame", onGameEvent);
 
     // startup the ticker
     createjs.Ticker.framerate = FRAME_RATE;

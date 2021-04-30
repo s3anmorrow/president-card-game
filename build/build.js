@@ -10291,8 +10291,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Player_1 = __webpack_require__(/*! ./Player */ "./src/Player.ts");
 const Toolkit_1 = __webpack_require__(/*! ./Toolkit */ "./src/Toolkit.ts");
 class ComputerPlayer extends Player_1.default {
-    constructor(stage, assetManager, deck, humanPlayer, table) {
-        super(stage, assetManager, deck, table);
+    constructor(name, stage, assetManager, deck, humanPlayer, table) {
+        super(name, stage, assetManager, deck, table);
         this.humanPlayer = humanPlayer;
     }
     countCards(cards, rank) {
@@ -10414,6 +10414,18 @@ exports.ASSET_MANIFEST = [
         src: "./lib/spritesheets/sprites.png",
         id: "sprites",
         data: 0
+    },
+    {
+        type: "json",
+        src: "./lib/spritesheets/glyphs.json",
+        id: "glyphs",
+        data: 0
+    },
+    {
+        type: "image",
+        src: "./lib/spritesheets/glyphs.png",
+        id: "glyphs",
+        data: 0
     }
 ];
 
@@ -10433,6 +10445,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __webpack_require__(/*! createjs */ "./node_modules/createjs/builds/1.0.0/createjs.min.js");
 const Constants_1 = __webpack_require__(/*! ./Constants */ "./src/Constants.ts");
 const AssetManager_1 = __webpack_require__(/*! ./AssetManager */ "./src/AssetManager.ts");
+const ScreenManager_1 = __webpack_require__(/*! ./ScreenManager */ "./src/ScreenManager.ts");
 const Card_1 = __webpack_require__(/*! ./Card */ "./src/Card.ts");
 const HumanPlayer_1 = __webpack_require__(/*! ./HumanPlayer */ "./src/HumanPlayer.ts");
 const ComputerPlayer_1 = __webpack_require__(/*! ./ComputerPlayer */ "./src/ComputerPlayer.ts");
@@ -10441,6 +10454,7 @@ const Table_1 = __webpack_require__(/*! ./Table */ "./src/Table.ts");
 let stage;
 let canvas;
 let assetManager;
+let screenManager;
 let table;
 let humanPlayer;
 let computerPlayer1;
@@ -10565,12 +10579,24 @@ function onGameEvent(e) {
         case "humanOut":
             break;
         case "gameOver":
-            console.log("GAME IS OVER!");
             gameOn = false;
             window.clearInterval(turnTimer);
             table.showLoser(players);
-            console.table(players);
+            players.sort((a, b) => {
+                if (a.status > b.status)
+                    return -1;
+                else if (a.status < b.status)
+                    return 1;
+                else
+                    return 0;
+            });
+            players.forEach(player => player.updateScore());
             table.hideMe();
+            screenManager.showSummary(players);
+            console.table(players);
+            break;
+        case "newGame":
+            console.log("NEW GAME");
             break;
         case "gameFinished":
             break;
@@ -10578,23 +10604,22 @@ function onGameEvent(e) {
 }
 function onReady(e) {
     console.log(">> adding sprites to game");
+    screenManager = new ScreenManager_1.default(stage, assetManager);
     table = new Table_1.default(stage, assetManager);
     deck = [];
-    for (let n = 2; n <= 14; n++) {
+    for (let n = 2; n <= 10; n++) {
         deck.push(new Card_1.default(stage, assetManager, table, "C", n));
-        deck.push(new Card_1.default(stage, assetManager, table, "H", n));
-        deck.push(new Card_1.default(stage, assetManager, table, "D", n));
-        deck.push(new Card_1.default(stage, assetManager, table, "S", n));
     }
-    humanPlayer = new HumanPlayer_1.default(stage, assetManager, deck, table);
-    computerPlayer1 = new ComputerPlayer_1.default(stage, assetManager, deck, humanPlayer, table);
-    computerPlayer2 = new ComputerPlayer_1.default(stage, assetManager, deck, humanPlayer, table);
-    computerPlayer3 = new ComputerPlayer_1.default(stage, assetManager, deck, humanPlayer, table);
+    humanPlayer = new HumanPlayer_1.default("You", stage, assetManager, deck, table);
+    computerPlayer1 = new ComputerPlayer_1.default("Shifty", stage, assetManager, deck, humanPlayer, table);
+    computerPlayer2 = new ComputerPlayer_1.default("Janky", stage, assetManager, deck, humanPlayer, table);
+    computerPlayer3 = new ComputerPlayer_1.default("Clyde", stage, assetManager, deck, humanPlayer, table);
     startGame();
     startRound();
     stage.on("gameOver", onGameEvent);
     stage.on("humanOut", onGameEvent);
     stage.on("cardsSelected", onGameEvent);
+    stage.on("newGame", onGameEvent);
     createjs.Ticker.framerate = Constants_1.FRAME_RATE;
     createjs.Ticker.on("tick", onTick);
     console.log(">> game ready");
@@ -10633,8 +10658,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Player_1 = __webpack_require__(/*! ./Player */ "./src/Player.ts");
 const Card_1 = __webpack_require__(/*! ./Card */ "./src/Card.ts");
 class HumanPlayer extends Player_1.default {
-    constructor(stage, assetManager, deck, table) {
-        super(stage, assetManager, deck, table);
+    constructor(name, stage, assetManager, deck, table) {
+        super(name, stage, assetManager, deck, table);
         this.playSpot = table.playSpot;
         this.playSpot.on("mouseover", this.onOver, this);
         this.playSpot.on("mouseout", this.onOut, this);
@@ -10734,8 +10759,10 @@ exports.default = HumanPlayer;
 Object.defineProperty(exports, "__esModule", { value: true });
 const Toolkit_1 = __webpack_require__(/*! ./Toolkit */ "./src/Toolkit.ts");
 class Player {
-    constructor(stage, assetManager, deck, table) {
+    constructor(name, stage, assetManager, deck, table) {
         this.reset();
+        this._name = name;
+        this._score = 0;
         this.stage = stage;
         this.deck = deck;
         this.table = table;
@@ -10743,6 +10770,9 @@ class Player {
         this._status = Player.STATUS_NEUTRAL;
         this._orientation = Player.ORIENTATION_BOTTOM;
         this.cursor = assetManager.getSprite("sprites", "cursors/pass", 0, 0);
+    }
+    get name() {
+        return this._name;
     }
     get hand() {
         return this._hand;
@@ -10770,6 +10800,9 @@ class Player {
     }
     get orientation() {
         return this._orientation;
+    }
+    get score() {
+        return this._score;
     }
     dealCard() {
         if (this.deck.length <= 0)
@@ -10800,7 +10833,13 @@ class Player {
         console.log("Player's selected cards:");
         console.log(this._selectedCards);
     }
+    updateScore() {
+        this._score = this._score + this._status;
+        if (this._score < 0)
+            this._score = 0;
+    }
     reset() {
+        this._score = 0;
         this._state = Player.STATE_NOT_PLAYING;
         this._status = Player.STATUS_NEUTRAL;
         this._hand = [];
@@ -10826,6 +10865,71 @@ Player.PLAYED_PASS = 0;
 Player.PLAYED_TWO = 1;
 Player.PLAYED_CARD = 2;
 Player.PLAYED_NONE = 3;
+
+
+/***/ }),
+
+/***/ "./src/ScreenManager.ts":
+/*!******************************!*\
+  !*** ./src/ScreenManager.ts ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+class ScreenManager {
+    constructor(stage, assetManager) {
+        this.stage = stage;
+        this.assetManager = assetManager;
+        this.summaryScreen = new createjs.Container();
+        this.summaryScreen.x = 123;
+        this.summaryScreen.y = 140;
+        this.txtScores = [];
+        let dropY = 115;
+        for (let n = 0; n < 4; n++) {
+            let txtScore = new createjs.BitmapText("0", assetManager.getSpriteSheet("glyphs"));
+            txtScore.x = 436;
+            txtScore.y = dropY;
+            this.txtScores.push(txtScore);
+            dropY += 35;
+        }
+        this.eventNewGame = new createjs.Event("newGame", true, false);
+    }
+    showSummary(players) {
+        this.hideAll();
+        let dropY = 115;
+        this.summaryScreen.removeAllChildren();
+        this.summaryScreen.addChild(this.assetManager.getSprite("sprites", "screens/summary", 0, 0));
+        players.forEach((player, index) => {
+            this.summaryScreen.addChild(this.assetManager.getSprite("sprites", "screens/summary" + player.name, 139, dropY));
+            let statusName;
+            if (player.status == 2)
+                statusName = "President";
+            else if (player.status == 1)
+                statusName = "VicePresident";
+            else if (player.status == 0)
+                statusName = "Neutral";
+            else if (player.status == -1)
+                statusName = "ViceAhole";
+            else if (player.status == -2)
+                statusName = "Ahole";
+            this.summaryScreen.addChild(this.assetManager.getSprite("sprites", "screens/summary" + statusName, 173, dropY));
+            this.txtScores[index].text = player.score.toString();
+            this.summaryScreen.addChild(this.txtScores[index]);
+            dropY += 35;
+        });
+        this.stage.addChildAt(this.summaryScreen, 1);
+        this.summaryScreen.on("click", (e) => {
+            this.stage.dispatchEvent(this.eventNewGame);
+        }, this, true);
+    }
+    hideAll() {
+        this.stage.removeChild(this.summaryScreen);
+    }
+}
+exports.default = ScreenManager;
 
 
 /***/ }),
@@ -10971,7 +11075,14 @@ class Table {
         let dropSpotX;
         let dropSpotY;
         let cards = player.hand;
-        cards.sort(this.sortCompare);
+        cards.sort((a, b) => {
+            if (a.rank < b.rank)
+                return -1;
+            else if (a.rank > b.rank)
+                return 1;
+            else
+                return 0;
+        });
         if (player.orientation == Player_1.default.ORIENTATION_LEFT) {
             dropSpotX = 80;
             dropSpotY = Math.floor((Constants_1.STAGE_HEIGHT - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 99)) / 2);
@@ -11006,17 +11117,6 @@ class Table {
                 card.showFaceUp();
                 dropSpotX = dropSpotX + Constants_1.PLAYER_CARD_SPREAD;
             }
-        }
-    }
-    sortCompare(a, b) {
-        if (a.rank < b.rank) {
-            return -1;
-        }
-        else if (a.rank > b.rank) {
-            return 1;
-        }
-        else {
-            return 0;
         }
     }
 }

@@ -9,8 +9,8 @@ export default class ComputerPlayer extends Player {
 
     private humanPlayer:HumanPlayer;
 
-    constructor(stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], humanPlayer:HumanPlayer, table:Table) {
-        super(stage, assetManager, deck, table);
+    constructor(name:string, stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], humanPlayer:HumanPlayer, table:Table) {
+        super(name, stage, assetManager, deck, table);
         this.humanPlayer = humanPlayer;
     }
 
