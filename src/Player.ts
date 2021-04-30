@@ -120,7 +120,7 @@ export default abstract class Player {
         this._selectedCards.forEach(selectedCard => {
             let index:number = this._hand.findIndex(card => card == selectedCard);
             // put cards back into deck
-            this.deck.push(this._hand[index]);
+            this.deck.push(this._hand[index]);            
             // hide turn marker for card
             this._hand[index].hideTurnMarker();
             // remove card from hand

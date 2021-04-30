@@ -114,7 +114,7 @@ function processCards():void {
     }
     
     // move index to next player (or find next player that is still in the game) as long as no two dropped
-    if (playType != Player.PLAYED_TWO) {
+    if ((playType != Player.PLAYED_TWO) || (players[turnIndex].state == Player.STATE_OUT)) {
         if (++turnIndex == playerTotalCount) turnIndex = 0;
         while (players[turnIndex].state == Player.STATE_OUT) {
             if (++turnIndex == playerTotalCount) turnIndex = 0;
@@ -141,7 +141,6 @@ function onTurn() {
             table.clearTable();
             passCounter = 0;
         }
-
         phase++;
     } else if (phase == 2) {
         // TURN PHASE II : selecting and placing cards on table
@@ -154,6 +153,7 @@ function onTurn() {
             console.log("=> COMPUTER'S TURN");       
             players[turnIndex].selectCards();
             playType = table.playCards();
+            table.showTurnMarker(players);
         } 
         phase++;
     } else {
@@ -169,6 +169,7 @@ function onGameEvent(e:createjs.Event):void {
             console.log("=> HUMAN'S TURN");
             players[turnIndex].selectCards();
             playType = table.playCards();
+            table.showTurnMarker(players);
             processCards();
             phase = 1;
             // start up turn timer again since was paused for human to take turn
@@ -192,6 +193,10 @@ function onGameEvent(e:createjs.Event):void {
 
             // ????????? display summary panel
             console.table(players);
+
+            table.hideMe();
+
+
         
             break;
         case "gameFinished":

@@ -10401,7 +10401,7 @@ exports.STAGE_HEIGHT = 600;
 exports.FRAME_RATE = 30;
 exports.PLAYER_CARD_SPREAD = 33;
 exports.COMPUTER_CARD_SPREAD = 20;
-exports.TURN_DELAY = 500;
+exports.TURN_DELAY = 200;
 exports.ASSET_MANIFEST = [
     {
         type: "json",
@@ -10505,7 +10505,7 @@ function processCards() {
         table.showPass();
         passCounter++;
     }
-    if (playType != Player_1.default.PLAYED_TWO) {
+    if ((playType != Player_1.default.PLAYED_TWO) || (players[turnIndex].state == Player_1.default.STATE_OUT)) {
         if (++turnIndex == playerTotalCount)
             turnIndex = 0;
         while (players[turnIndex].state == Player_1.default.STATE_OUT) {
@@ -10539,6 +10539,7 @@ function onTurn() {
             console.log("=> COMPUTER'S TURN");
             players[turnIndex].selectCards();
             playType = table.playCards();
+            table.showTurnMarker(players);
         }
         phase++;
     }
@@ -10553,6 +10554,7 @@ function onGameEvent(e) {
             console.log("=> HUMAN'S TURN");
             players[turnIndex].selectCards();
             playType = table.playCards();
+            table.showTurnMarker(players);
             processCards();
             phase = 1;
             if (gameOn) {
@@ -10568,6 +10570,7 @@ function onGameEvent(e) {
             window.clearInterval(turnTimer);
             table.showLoser(players);
             console.table(players);
+            table.hideMe();
             break;
         case "gameFinished":
             break;
@@ -10852,16 +10855,18 @@ class Table {
         background.scaleX = Constants_1.STAGE_WIDTH;
         background.scaleY = Constants_1.STAGE_HEIGHT;
         stage.addChild(background);
-        this.stage.addChild(assetManager.getSprite("sprites", "screens/tableLabel1", 400, 145));
-        this.stage.addChild(assetManager.getSprite("sprites", "screens/tableLabel2", 400, 354));
-        this.stage.addChild(assetManager.getSprite("sprites", "screens/tableLabel3", 400, 376));
+        this.labelContainer = new createjs.Container();
+        this.labelContainer.addChild(assetManager.getSprite("sprites", "screens/tableLabel1", 400, 145));
+        this.labelContainer.addChild(assetManager.getSprite("sprites", "screens/tableLabel2", 400, 354));
+        this.labelContainer.addChild(assetManager.getSprite("sprites", "screens/tableLabel3", 400, 376));
+        this.stage.addChild(this.labelContainer);
         this._playSpot = new createjs.Container();
         this._playSpot.x = 291;
         this._playSpot.y = 168;
         let playSpotBackground = assetManager.getSprite("sprites", "screens/playSpot", 0, 0);
         this._playSpot.addChild(playSpotBackground);
         this.stage.addChild(this._playSpot);
-        this.passIndicator = assetManager.getSprite("sprites", "cursors/pass", 77, 58);
+        this.passIndicator = assetManager.getSprite("sprites", "cursors/pass", 109, 83);
         this.eventGameOver = new createjs.Event("gameOver", true, false);
         this.eventHumanOut = new createjs.Event("humanOut", true, false);
     }
@@ -10905,8 +10910,17 @@ class Table {
     showLoser(players) {
         let loser = players.find(player => player.state != Player_1.default.STATE_OUT);
         this.player = loser;
+        this.showTurnMarker(players);
         loser.revealCards();
         loser.status = this.statusRankings[this.statusCounter];
+    }
+    hideMe() {
+        this.stage.removeChild(this.labelContainer);
+        this.stage.removeChild(this.playSpot);
+    }
+    showMe() {
+        this.stage.addChildAt(this.labelContainer, 1);
+        this.stage.addChildAt(this.playSpot, 1);
     }
     playCards() {
         let selectedCards = this._player.selectedCards;
@@ -10932,9 +10946,9 @@ class Table {
             this._playersInGame--;
             console.log("*** PLAYER OUT with status " + this._player.status + " : number left " + this._playersInGame);
             if (this._player instanceof HumanPlayer_1.default)
-                this.sprite.dispatchEvent(this.eventHumanOut);
+                this.stage.dispatchEvent(this.eventHumanOut);
             if (this._playersInGame <= 1)
-                this.sprite.dispatchEvent(this.eventGameOver);
+                this.stage.dispatchEvent(this.eventGameOver);
         }
         return playType;
     }

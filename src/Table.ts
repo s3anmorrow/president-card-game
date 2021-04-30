@@ -8,13 +8,12 @@ import { PLAYER_CARD_SPREAD, COMPUTER_CARD_SPREAD, STAGE_WIDTH, STAGE_HEIGHT } f
 export default class Table {
     private stage:createjs.StageGL;
     private sprite:createjs.Sprite;    
-
     private statusCounter:number;
     private statusRankings:number[];
-
-    private _playersInGame:number
     private passIndicator:createjs.Sprite;    
+    private labelContainer:createjs.Container;
     
+    private _playersInGame:number
     private _player:Player;
     private _playedCards:Card[];
     private _playSpot:createjs.Container;
@@ -38,9 +37,11 @@ export default class Table {
         stage.addChild(background);   
         
         // table label sprites
-        this.stage.addChild(assetManager.getSprite("sprites","screens/tableLabel1",400,145));
-        this.stage.addChild(assetManager.getSprite("sprites","screens/tableLabel2",400,354));
-        this.stage.addChild(assetManager.getSprite("sprites","screens/tableLabel3",400,376));
+        this.labelContainer = new createjs.Container();
+        this.labelContainer.addChild(assetManager.getSprite("sprites","screens/tableLabel1",400,145));
+        this.labelContainer.addChild(assetManager.getSprite("sprites","screens/tableLabel2",400,354));
+        this.labelContainer.addChild(assetManager.getSprite("sprites","screens/tableLabel3",400,376));
+        this.stage.addChild(this.labelContainer);
 
         // playspot where players drop cards
         this._playSpot = new createjs.Container();
@@ -51,7 +52,7 @@ export default class Table {
         this.stage.addChild(this._playSpot);
 
         // construct passIndicator sprite for showing computer passed
-        this.passIndicator = assetManager.getSprite("sprites", "cursors/pass", 77, 58);
+        this.passIndicator = assetManager.getSprite("sprites", "cursors/pass", 109, 83);
 
         this.eventGameOver = new createjs.Event("gameOver", true, false);
         this.eventHumanOut = new createjs.Event("humanOut", true, false);
@@ -109,9 +110,20 @@ export default class Table {
         let loser:Player = players.find(player => player.state != Player.STATE_OUT);
         // highlight the loser on table
         this.player = loser;
+        this.showTurnMarker(players);
         // reveal its cards
         loser.revealCards();
         loser.status = this.statusRankings[this.statusCounter];
+    }
+
+    public hideMe():void {
+        this.stage.removeChild(this.labelContainer);
+        this.stage.removeChild(this.playSpot);
+    }
+
+    public showMe():void {
+        this.stage.addChildAt(this.labelContainer,1);
+        this.stage.addChildAt(this.playSpot,1);
     }
 
     public playCards():number {
@@ -149,9 +161,9 @@ export default class Table {
             console.log("*** PLAYER OUT with status " + this._player.status + " : number left " + this._playersInGame);
 
             // is this player the human?
-            if (this._player instanceof HumanPlayer) this.sprite.dispatchEvent(this.eventHumanOut);
+            if (this._player instanceof HumanPlayer) this.stage.dispatchEvent(this.eventHumanOut);
             // is the round over?
-            if (this._playersInGame <= 1) this.sprite.dispatchEvent(this.eventGameOver);
+            if (this._playersInGame <= 1) this.stage.dispatchEvent(this.eventGameOver);
         }
 
         return playType;
