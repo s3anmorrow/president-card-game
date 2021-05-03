@@ -10780,7 +10780,7 @@ class Player {
         this.deck = deck;
         this.table = table;
         this._state = Player.STATE_NOT_PLAYING;
-        this._status = Player.STATUS_NEUTRAL;
+        this._status = 0;
         this._orientation = Player.ORIENTATION_BOTTOM;
     }
     get name() {
@@ -10856,7 +10856,7 @@ class Player {
             this._score = 0;
             this._state = Player.STATE_NOT_PLAYING;
         }
-        this._status = Player.STATUS_NEUTRAL;
+        this._status = 0;
         this._hand = [];
         this._selectedCards = [];
     }
@@ -10871,11 +10871,6 @@ Player.ORIENTATION_LEFT = 1;
 Player.ORIENTATION_TOP = 2;
 Player.ORIENTATION_RIGHT = 3;
 Player.ORIENTATION_BOTTOM = 4;
-Player.STATUS_PRESIDENT = 2;
-Player.STATUS_VICE_PRESIDENT = 1;
-Player.STATUS_NEUTRAL = 0;
-Player.STATUS_VICE_ASSHOLE = -1;
-Player.STATUS_ASSHOLE = -2;
 Player.PLAYED_PASS = 0;
 Player.PLAYED_TWO = 1;
 Player.PLAYED_CARD = 2;

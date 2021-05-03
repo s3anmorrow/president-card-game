@@ -2,7 +2,6 @@ import Card from "./Card";
 import Table from "./Table";
 import { randomMe } from "./Toolkit";
 import AssetManager from "./AssetManager";
-import HumanPlayer from "./HumanPlayer";
 
 export default abstract class Player {
     // state class constants
@@ -17,13 +16,7 @@ export default abstract class Player {
     public static ORIENTATION_RIGHT:number = 3;
     public static ORIENTATION_BOTTOM:number = 4;
 
-    public static STATUS_PRESIDENT:number = 2
-    public static STATUS_VICE_PRESIDENT:number = 1;
-    public static STATUS_NEUTRAL:number = 0;
-    public static STATUS_VICE_ASSHOLE:number = -1;
-    public static STATUS_ASSHOLE:number = -2;
-
-    public static PLAYED_PASS:number = 0
+    public static PLAYED_PASS:number = 0;
     public static PLAYED_TWO:number = 1;
     public static PLAYED_CARD:number = 2;
     public static PLAYED_NONE:number = 3;
@@ -49,7 +42,7 @@ export default abstract class Player {
         this.deck = deck;
         this.table = table;
         this._state = Player.STATE_NOT_PLAYING;
-        this._status = Player.STATUS_NEUTRAL;
+        this._status = 0;
         this._orientation = Player.ORIENTATION_BOTTOM;
     }
 
@@ -151,7 +144,7 @@ export default abstract class Player {
             this._score = 0;
             this._state = Player.STATE_NOT_PLAYING;    
         }
-        this._status = Player.STATUS_NEUTRAL;
+        this._status = 0;
         this._hand = [];
         this._selectedCards = [];
     }
