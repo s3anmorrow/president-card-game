@@ -5,11 +5,12 @@ import AssetManager from "./AssetManager";
 
 export default abstract class Player {
     // state class constants
+    public static STATE_NOT_PLAYING:number = 0;
     public static STATE_CARDS_SELECTED:number = 1;
     public static STATE_CARDS_NOT_SELECTED:number = 2;
-    public static STATE_NOT_PLAYING:number = 3;
-    public static STATE_DISABLED:number = 4;
-    public static STATE_OUT:number = 5;
+    public static STATE_DISABLED:number = 3;
+    public static STATE_OUT:number = 4;
+    public static STATE_CARD_SWAPPING:number = 5;
 
     public static ORIENTATION_LEFT:number = 1;
     public static ORIENTATION_TOP:number = 2;

@@ -10,7 +10,6 @@
 import "createjs";
 // importing game constants
 import { STAGE_WIDTH, STAGE_HEIGHT, FRAME_RATE, ASSET_MANIFEST, TURN_DELAY } from "./Constants";
-import { randomMe } from "./Toolkit";
 import AssetManager from "./AssetManager";
 import ScreenManager from "./ScreenManager";
 import Card from "./Card";
@@ -178,9 +177,9 @@ function onGameEvent(e:createjs.Event):void {
         case "roundCardSwap":
             console.log("CARD SWAP");
             console.table(deck);
-            console.log("human state: " + humanPlayer.state);
 
             table.dealCards();
+            table.refreshCards();
             table.showMe();
 
             // ?????????? perhaps not do this but hide all turn markers?
@@ -190,10 +189,48 @@ function onGameEvent(e:createjs.Event):void {
             table.showTurnMarker();
 
 
-            // humanPlayer.enableMe();
+            // isolate players according to status
+            let president:Player = players.find(player => player.status == 2);
+            let vicePresident:Player = players.find(player => player.status == 1);
+            let neutral:Player = players.find(player => player.status == 0);
+            let viceAhole:Player = players.find(player => player.status == -1);
+            let ahole:Player = players.find(player => player.status == -2);
+
+            // automatically swap out high cards
+            let highCards:Card[];
+            let lowCards:Card[];
+            highCards = ahole.hand.splice(ahole.hand.length - 3, 2);
+            highCards.forEach(card => president.hand.push(card));
+
+            console.log("presidents new cards");
+            console.table(highCards);
+
+            highCards = viceAhole.hand.splice(viceAhole.hand.length - 2, 1);
+            highCards.forEach(card => vicePresident.hand.push(card));
+
+            console.log("vice presidents new cards");
+            console.table(highCards);
+
+            // lowCards = president.hand.splice(0, 2);
+            // lowCards.forEach(card => ahole.hand.push(card));
+
+            // console.log("aholes new cards");
+            // console.table(lowCards);
+
+            // lowCards = vicePresident.hand.splice(0, 2);
+            // lowCards.forEach(card => viceAhole.hand.push(card));
+
+            // console.log("vice aholes new cards");
+            // console.table(lowCards);
+
+            table.refreshCards();
+
+            // // does the human need to pick one or two lowest card to swap?
+            // if ((president instanceof HumanPlayer) || (vicePresident instanceof HumanPlayer)) {
+            //     humanPlayer.enableForCardSwap();
+            // }
+            
             screenManager.showCardSwap();
-
-
 
         
             break;
@@ -232,10 +269,10 @@ function onReady(e:createjs.Event):void {
     table = new Table(stage, assetManager);
     // construct deck of Cards
     deck = [];
-    // for (let n:number=2; n<=14; n++) {
-    for (let n:number=2; n<=10; n++) {
+    for (let n:number=2; n<=14; n++) {
+    // for (let n:number=2; n<=10; n++) {
         deck.push(new Card(stage, assetManager, table, "C",n));
-        // deck.push(new Card(stage, assetManager, table, "H",n));
+        deck.push(new Card(stage, assetManager, table, "H",n));
         // deck.push(new Card(stage, assetManager, table, "D",n));
         // deck.push(new Card(stage, assetManager, table, "S",n));
     }

@@ -48,9 +48,20 @@ export default class HumanPlayer extends Player {
         this._state = Player.STATE_DISABLED;
     }
 
+    public enableForCardSwap():void {
+        // how many low cards am I swapping?
+        console.log(this._status);
+        // ?????? only swap is this._status > 0 (vice/pres)
+
+
+        // enable all cards for picking ones to swap
+        this._hand.forEach(card => card.enableMe());
+        this._state = Player.STATE_CARD_SWAPPING;
+    }
+
     // --------------------------------------------------- event handlers
     private onClick():void {
-        if (this._state == Player.STATE_DISABLED) return;
+        if ((this._state == Player.STATE_DISABLED) || (this._state == Player.STATE_CARD_SWAPPING)) return;
         if (this._state == Player.STATE_CARDS_SELECTED) {
             // human playing is playing cards - check if selected cards are valid?
             if (this.table.validateCards() == false) return;
@@ -66,7 +77,7 @@ export default class HumanPlayer extends Player {
     }
 
     private onOver(e:createjs.Event):void {
-        if (this._state == Player.STATE_DISABLED) return;
+        if ((this._state == Player.STATE_DISABLED) || (this._state == Player.STATE_CARD_SWAPPING)) return;
         // hide real cursor
         this.playSpot.cursor = "none";
         // replace cursor with sprite
@@ -86,36 +97,51 @@ export default class HumanPlayer extends Player {
     private onCardEvent(e:createjs.Event):void {
         this._selectedCards = [];
 
-        switch (e.type) {
-            case "cardSelected":
-                // what is the rank of the selected card?
-                let rank:number = this._hand.find(card => card.state == Card.STATE_SELECTED).rank;
-                // disable all cards except those of the same rank
-                this._hand.forEach(card => {
-                    if ((card.state != Card.STATE_SELECTED) && (card.rank != rank)) card.disableMe();
-                });
+        if (this._state == Player.STATE_CARD_SWAPPING) {
+            switch (e.type) {
+                case "cardSelected":
 
-                // update selectedCards array
-                this._hand.forEach(card => {
-                    if (card.state == Card.STATE_SELECTED) this._selectedCards.push(card);
-                });
-                break;
-            case "cardDeselected":
-                // are all cards unselected?
-                if (this._hand.find(card => card.state == Card.STATE_SELECTED) == undefined) {
-                    this._hand.forEach(card => card.enableMe());
-                }
+                    break;
+                case "cardDeselected":
 
-                // update selectedCards array
-                this._hand.forEach(card => {
-                    if (card.state == Card.STATE_SELECTED) this._selectedCards.push(card);
-                });
-                break;
-        }
+                    break;
+            }
 
-        // adjust state if cards selected or not
-        if (this._selectedCards.length > 0) this._state = Player.STATE_CARDS_SELECTED;
-        else this._state = Player.STATE_CARDS_NOT_SELECTED;
-    }    
+            // regardless of outcome above - update selectedCards array
+            this._hand.forEach(card => {
+                if (card.state == Card.STATE_SELECTED) this._selectedCards.push(card);
+            });
 
+        } else {
+
+            
+            switch (e.type) {
+                case "cardSelected":
+                    // what is the rank of the selected card?
+                    let rank:number = this._hand.find(card => card.state == Card.STATE_SELECTED).rank;
+                    // disable all cards except those of the same rank
+                    this._hand.forEach(card => {
+                        if ((card.state != Card.STATE_SELECTED) && (card.rank != rank)) card.disableMe();
+                    });
+                    break;
+                case "cardDeselected":
+                    // are all cards unselected?
+                    if (this._hand.find(card => card.state == Card.STATE_SELECTED) == undefined) {
+                        this._hand.forEach(card => card.enableMe());
+                    }
+                    break;
+            }
+
+            // regardless of outcome above - update selectedCards array
+            this._hand.forEach(card => {
+                if (card.state == Card.STATE_SELECTED) this._selectedCards.push(card);
+            });
+
+            // adjust state if cards selected or not
+            if (this._selectedCards.length > 0) this._state = Player.STATE_CARDS_SELECTED;
+            else this._state = Player.STATE_CARDS_NOT_SELECTED;
+        }  
+        
+
+    }
 }

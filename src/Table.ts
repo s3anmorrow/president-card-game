@@ -200,12 +200,17 @@ export default class Table {
         for (let player of this._players) {
             cards = player.hand;
 
-            // sort cards
+            // sort cards with any 2s at the top
             cards.sort((a:Card, b:Card) => {
                 if (a.rank < b.rank) return -1;
                 else if (a.rank > b.rank) return 1;
                 else return 0;
             });
+            // remove twos from beginning of array (if any)
+            let twos:Card[] = cards.filter(card => card.rank == 2);
+            cards.splice(0, twos.length);
+            // add twos to end of array
+            twos.forEach(card => cards.push(card));
 
             // calculating card x drop spot so all cards are centered on stage
             if (player.orientation == Player.ORIENTATION_LEFT) {

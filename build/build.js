@@ -10580,12 +10580,28 @@ function onGameEvent(e) {
         case "roundCardSwap":
             console.log("CARD SWAP");
             console.table(deck);
-            console.log("human state: " + humanPlayer.state);
             table.dealCards();
+            table.refreshCards();
             table.showMe();
             turnIndex = players.findIndex(player => player instanceof HumanPlayer_1.default);
             table.currentPlayer = players[turnIndex];
             table.showTurnMarker();
+            let president = players.find(player => player.status == 2);
+            let vicePresident = players.find(player => player.status == 1);
+            let neutral = players.find(player => player.status == 0);
+            let viceAhole = players.find(player => player.status == -1);
+            let ahole = players.find(player => player.status == -2);
+            let highCards;
+            let lowCards;
+            highCards = ahole.hand.splice(ahole.hand.length - 3, 2);
+            highCards.forEach(card => president.hand.push(card));
+            console.log("presidents new cards");
+            console.table(highCards);
+            highCards = viceAhole.hand.splice(viceAhole.hand.length - 2, 1);
+            highCards.forEach(card => vicePresident.hand.push(card));
+            console.log("vice presidents new cards");
+            console.table(highCards);
+            table.refreshCards();
             screenManager.showCardSwap();
             break;
         case "roundStart":
@@ -10615,8 +10631,9 @@ function onReady(e) {
     screenManager = new ScreenManager_1.default(stage, assetManager);
     table = new Table_1.default(stage, assetManager);
     deck = [];
-    for (let n = 2; n <= 10; n++) {
+    for (let n = 2; n <= 14; n++) {
         deck.push(new Card_1.default(stage, assetManager, table, "C", n));
+        deck.push(new Card_1.default(stage, assetManager, table, "H", n));
     }
     humanPlayer = new HumanPlayer_1.default("You", stage, assetManager, deck, table);
     computerPlayer1 = new ComputerPlayer_1.default("Shifty", stage, assetManager, deck, humanPlayer, table);
@@ -10695,8 +10712,13 @@ class HumanPlayer extends Player_1.default {
         this.stage.removeChild(this.cursor);
         this._state = Player_1.default.STATE_DISABLED;
     }
+    enableForCardSwap() {
+        console.log(this._status);
+        this._hand.forEach(card => card.enableMe());
+        this._state = Player_1.default.STATE_CARD_SWAPPING;
+    }
     onClick() {
-        if (this._state == Player_1.default.STATE_DISABLED)
+        if ((this._state == Player_1.default.STATE_DISABLED) || (this._state == Player_1.default.STATE_CARD_SWAPPING))
             return;
         if (this._state == Player_1.default.STATE_CARDS_SELECTED) {
             if (this.table.validateCards() == false)
@@ -10710,7 +10732,7 @@ class HumanPlayer extends Player_1.default {
         this.playSpot.dispatchEvent(this.eventCardsSelected);
     }
     onOver(e) {
-        if (this._state == Player_1.default.STATE_DISABLED)
+        if ((this._state == Player_1.default.STATE_DISABLED) || (this._state == Player_1.default.STATE_CARD_SWAPPING))
             return;
         this.playSpot.cursor = "none";
         if (this._state == Player_1.default.STATE_CARDS_SELECTED)
@@ -10727,32 +10749,42 @@ class HumanPlayer extends Player_1.default {
     }
     onCardEvent(e) {
         this._selectedCards = [];
-        switch (e.type) {
-            case "cardSelected":
-                let rank = this._hand.find(card => card.state == Card_1.default.STATE_SELECTED).rank;
-                this._hand.forEach(card => {
-                    if ((card.state != Card_1.default.STATE_SELECTED) && (card.rank != rank))
-                        card.disableMe();
-                });
-                this._hand.forEach(card => {
-                    if (card.state == Card_1.default.STATE_SELECTED)
-                        this._selectedCards.push(card);
-                });
-                break;
-            case "cardDeselected":
-                if (this._hand.find(card => card.state == Card_1.default.STATE_SELECTED) == undefined) {
-                    this._hand.forEach(card => card.enableMe());
-                }
-                this._hand.forEach(card => {
-                    if (card.state == Card_1.default.STATE_SELECTED)
-                        this._selectedCards.push(card);
-                });
-                break;
+        if (this._state == Player_1.default.STATE_CARD_SWAPPING) {
+            switch (e.type) {
+                case "cardSelected":
+                    break;
+                case "cardDeselected":
+                    break;
+            }
+            this._hand.forEach(card => {
+                if (card.state == Card_1.default.STATE_SELECTED)
+                    this._selectedCards.push(card);
+            });
         }
-        if (this._selectedCards.length > 0)
-            this._state = Player_1.default.STATE_CARDS_SELECTED;
-        else
-            this._state = Player_1.default.STATE_CARDS_NOT_SELECTED;
+        else {
+            switch (e.type) {
+                case "cardSelected":
+                    let rank = this._hand.find(card => card.state == Card_1.default.STATE_SELECTED).rank;
+                    this._hand.forEach(card => {
+                        if ((card.state != Card_1.default.STATE_SELECTED) && (card.rank != rank))
+                            card.disableMe();
+                    });
+                    break;
+                case "cardDeselected":
+                    if (this._hand.find(card => card.state == Card_1.default.STATE_SELECTED) == undefined) {
+                        this._hand.forEach(card => card.enableMe());
+                    }
+                    break;
+            }
+            this._hand.forEach(card => {
+                if (card.state == Card_1.default.STATE_SELECTED)
+                    this._selectedCards.push(card);
+            });
+            if (this._selectedCards.length > 0)
+                this._state = Player_1.default.STATE_CARDS_SELECTED;
+            else
+                this._state = Player_1.default.STATE_CARDS_NOT_SELECTED;
+        }
     }
 }
 exports.default = HumanPlayer;
@@ -10862,11 +10894,12 @@ class Player {
     }
 }
 exports.default = Player;
+Player.STATE_NOT_PLAYING = 0;
 Player.STATE_CARDS_SELECTED = 1;
 Player.STATE_CARDS_NOT_SELECTED = 2;
-Player.STATE_NOT_PLAYING = 3;
-Player.STATE_DISABLED = 4;
-Player.STATE_OUT = 5;
+Player.STATE_DISABLED = 3;
+Player.STATE_OUT = 4;
+Player.STATE_CARD_SWAPPING = 5;
 Player.ORIENTATION_LEFT = 1;
 Player.ORIENTATION_TOP = 2;
 Player.ORIENTATION_RIGHT = 3;
@@ -11129,6 +11162,9 @@ class Table {
                 else
                     return 0;
             });
+            let twos = cards.filter(card => card.rank == 2);
+            cards.splice(0, twos.length);
+            twos.forEach(card => cards.push(card));
             if (player.orientation == Player_1.default.ORIENTATION_LEFT) {
                 dropSpotX = 80;
                 dropSpotY = Math.floor((Constants_1.STAGE_HEIGHT - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 99)) / 2);
