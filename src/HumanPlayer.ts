@@ -31,6 +31,7 @@ export default class HumanPlayer extends Player {
    
     // --------------------------------------------------- public methods
     public update():void {
+        if (this._state == Player.STATE_DISABLED) return;
         this.cursor.x = this.stage.mouseX;
         this.cursor.y = this.stage.mouseY;
     }    
@@ -66,7 +67,6 @@ export default class HumanPlayer extends Player {
 
     private onOver(e:createjs.Event):void {
         if (this._state == Player.STATE_DISABLED) return;
-
         // hide real cursor
         this.playSpot.cursor = "none";
         // replace cursor with sprite

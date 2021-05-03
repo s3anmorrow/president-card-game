@@ -11,29 +11,22 @@ export default class Table {
     private statusRankings:number[];
     private passIndicator:createjs.Sprite;    
     private labelContainer:createjs.Container;
-    
-    private _playersInGame:number
-    private _player:Player;
+    private playersInRound:number
+
+    private _currentPlayer:Player;
+    private _players:Player[];
     private _playedCards:Card[];
     private _playSpot:createjs.Container;
-    private _playersTotalCount:number;
 
-    private eventGameOver:createjs.Event;
+    private eventRoundOver:createjs.Event;
     private eventHumanOut:createjs.Event;
     
     constructor(stage:createjs.StageGL, assetManager:AssetManager) {
         // initialization
         this.stage = stage;
         this._playedCards = [];
-        this._playersTotalCount = 4;
         this.statusCounter = 0;
-        this._playersInGame = 4;
-
-        // construct background sprite
-        let background:createjs.Sprite = assetManager.getSprite("sprites","screens/background",0,0);
-        background.scaleX = STAGE_WIDTH;
-        background.scaleY = STAGE_HEIGHT;
-        stage.addChild(background);   
+        this.playersInRound = 0;
         
         // table label sprites
         this.labelContainer = new createjs.Container();
@@ -46,21 +39,30 @@ export default class Table {
         this._playSpot = new createjs.Container();
         this._playSpot.x = 291;
         this._playSpot.y = 168;
-        let playSpotBackground:createjs.Sprite = assetManager.getSprite("sprites", "screens/playSpot", 0, 0);
-        this._playSpot.addChild(playSpotBackground);
+        this._playSpot.addChild(assetManager.getSprite("sprites", "screens/playSpot", 0, 0));
         this.stage.addChild(this._playSpot);
 
         // construct passIndicator sprite for showing computer passed
         this.passIndicator = assetManager.getSprite("sprites", "cursors/pass", 109, 83);
 
-        this.eventGameOver = new createjs.Event("gameOver", true, false);
+        this.eventRoundOver = new createjs.Event("roundOver", true, false);
         this.eventHumanOut = new createjs.Event("humanOut", true, false);
     }
 
     // -------------------------------------------- gets/sets
     // the player object who is currently taking a turn
-    public set player(value:Player) {
-        this._player = value;
+    public set currentPlayer(value:Player) {
+        this._currentPlayer = value;
+    }
+    public get currentPlayer():Player {
+        return this._currentPlayer;
+    }
+
+    public set players(value:Player[]) {
+        this._players = value;
+        // set possible status rankings for number of players
+        if (this._players.length == 4) this.statusRankings = [2,1,-1,-2];
+        else this.statusRankings = [1,0,-1];
     }
 
     public get playSpot():createjs.Container {
@@ -71,24 +73,14 @@ export default class Table {
         return this._playedCards;
     }
 
-    public get playersInGameCount():number {
-        return this._playersInGame;
-    }
-
-    public set playersTotalCount(value:number) {
-        this._playersTotalCount = value;
-        this._playersInGame = value;
-
-        if (this._playersTotalCount == 4) this.statusRankings = [2,1,-1,-2];
-        else this.statusRankings = [1,0,-1];
-    }
-
     // -------------------------------------------- public methods
     public reset():void {
+        this.hidePass();
         this.clearTable();
         this.hidePass();
-        this.playersTotalCount = this._playersTotalCount;
+        this.playersInRound = this._players.length;
         this.statusCounter = 0;
+        this._playedCards = [];
     }
 
     public clearTable():void {
@@ -97,19 +89,19 @@ export default class Table {
     }
 
     public showPass():void {
-        if (this._player instanceof ComputerPlayer) this._playSpot.addChild(this.passIndicator);
+        if (this._currentPlayer instanceof ComputerPlayer) this._playSpot.addChild(this.passIndicator);
     }    
     
     public hidePass():void {
         this._playSpot.removeChild(this.passIndicator);
     }   
     
-    public showLoser(players:Player[]):void {
+    public showLoser():void {
         // find which player is loser and turn cards face up
-        let loser:Player = players.find(player => player.state != Player.STATE_OUT);
+        let loser:Player = this._players.find(player => player.state != Player.STATE_OUT);
         // highlight the loser on table
-        this.player = loser;
-        this.showTurnMarker(players);
+        this.currentPlayer = loser;
+        this.showTurnMarker();
         // reveal its cards
         loser.revealCards();
         loser.status = this.statusRankings[this.statusCounter];
@@ -125,9 +117,19 @@ export default class Table {
         this.stage.addChildAt(this.playSpot,1);
     }
 
+    public dealCards():void {
+        // deal cards to all players
+        while (true) {
+            let finished:boolean;
+            this._players.forEach(player => finished = player.dealCard());
+            if (finished) break;
+        }
+        this.refreshCards();
+    }
+
     public playCards():number {
         // isolating player's selected cards about to be played
-        let selectedCards:Card[] = this._player.selectedCards;
+        let selectedCards:Card[] = this._currentPlayer.selectedCards;
 
         // determine type of play placed on table
         let playType:number = Player.PLAYED_CARD;
@@ -150,26 +152,26 @@ export default class Table {
         }
           
         // check if player is out of round
-        if (this._player.hand.length == 0) {
+        if (this._currentPlayer.hand.length == 0) {
             // update player
-            this._player.state = Player.STATE_OUT;
-            this._player.status = this.statusRankings[this.statusCounter];
+            this._currentPlayer.state = Player.STATE_OUT;
+            this._currentPlayer.status = this.statusRankings[this.statusCounter];
             this.statusCounter++;
-            this._playersInGame--;
+            this.playersInRound--;
 
-            console.log("*** PLAYER OUT with status " + this._player.status + " : number left " + this._playersInGame);
+            console.log("*** PLAYER OUT with status " + this._currentPlayer.status + " : number left " + this.playersInRound);
 
             // is this player the human?
-            if (this._player instanceof HumanPlayer) this.stage.dispatchEvent(this.eventHumanOut);
+            if (this._currentPlayer instanceof HumanPlayer) this.stage.dispatchEvent(this.eventHumanOut);
             // is the round over?
-            if (this._playersInGame <= 1) this.stage.dispatchEvent(this.eventGameOver);
+            if (this.playersInRound <= 1) this.stage.dispatchEvent(this.eventRoundOver);
         }
 
         return playType;
     }
 
     public validateCards():boolean {
-        let selectedCards:Card[] = this._player.selectedCards;
+        let selectedCards:Card[] = this._currentPlayer.selectedCards;
         // if no cards on the table everything is valid
         if (this._playedCards.length == 0) return true;
 		// rule set : one 2 to clear any number of cards
@@ -183,56 +185,60 @@ export default class Table {
 		return false;
 	}
 
-    public showTurnMarker(players:Player[]):void {
+    public showTurnMarker():void {
         // hide all turn markers for all players
-        players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
+        this._players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
         // show current player's turn markers
-        this._player.hand.forEach(card => card.showTurnMarker())
+        this._currentPlayer.hand.forEach(card => card.showTurnMarker())
     }
 
-    public refreshCards(player:Player):void {
+    public refreshCards():void {
         let dropSpotX:number;
         let dropSpotY:number;
-        let cards:Card[] = player.hand;
+        let cards:Card[];
 
-        // sort cards
-        cards.sort((a:Card, b:Card) => {
-            if (a.rank < b.rank) return -1;
-            else if (a.rank > b.rank) return 1;
-            else return 0;
-        });
+        for (let player of this._players) {
+            cards = player.hand;
 
-        // calculating card x drop spot so all cards are centered on stage
-        if (player.orientation == Player.ORIENTATION_LEFT) {
-            dropSpotX = 80;
-            dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
-        } else if (player.orientation == Player.ORIENTATION_RIGHT) {
-            dropSpotX = 850;
-            dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
-        } else if (player.orientation == Player.ORIENTATION_TOP) {
-            dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
-            dropSpotY = -50;
-        } else {
-            dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * PLAYER_CARD_SPREAD) + 99))/2);
-            dropSpotY = 440;
-        }
+            // sort cards
+            cards.sort((a:Card, b:Card) => {
+                if (a.rank < b.rank) return -1;
+                else if (a.rank > b.rank) return 1;
+                else return 0;
+            });
 
-        // placing cards onto table
-        for (let card of cards) {
-            card.positionMe(dropSpotX, dropSpotY);
-            card.disableMe();
-            if ((player.orientation == Player.ORIENTATION_LEFT) || (player.orientation == Player.ORIENTATION_RIGHT)) {
-                card.rotateMe(90);
-                card.showFaceDown();
-                dropSpotY = dropSpotY + COMPUTER_CARD_SPREAD;
+            // calculating card x drop spot so all cards are centered on stage
+            if (player.orientation == Player.ORIENTATION_LEFT) {
+                dropSpotX = 80;
+                dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
+            } else if (player.orientation == Player.ORIENTATION_RIGHT) {
+                dropSpotX = 850;
+                dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
             } else if (player.orientation == Player.ORIENTATION_TOP) {
-                card.rotateMe(0);
-                card.showFaceDown();
-                dropSpotX = dropSpotX + COMPUTER_CARD_SPREAD;
+                dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
+                dropSpotY = -50;
             } else {
-                card.rotateMe(0);
-                card.showFaceUp();
-                dropSpotX = dropSpotX + PLAYER_CARD_SPREAD;
+                dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * PLAYER_CARD_SPREAD) + 99))/2);
+                dropSpotY = 440;
+            }
+
+            // placing cards onto table
+            for (let card of cards) {
+                card.positionMe(dropSpotX, dropSpotY);
+                card.disableMe();
+                if ((player.orientation == Player.ORIENTATION_LEFT) || (player.orientation == Player.ORIENTATION_RIGHT)) {
+                    card.rotateMe(90);
+                    card.showFaceDown();
+                    dropSpotY = dropSpotY + COMPUTER_CARD_SPREAD;
+                } else if (player.orientation == Player.ORIENTATION_TOP) {
+                    card.rotateMe(0);
+                    card.showFaceDown();
+                    dropSpotX = dropSpotX + COMPUTER_CARD_SPREAD;
+                } else {
+                    card.rotateMe(0);
+                    card.showFaceUp();
+                    dropSpotX = dropSpotX + PLAYER_CARD_SPREAD;
+                }
             }
         }
     }

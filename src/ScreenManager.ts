@@ -1,5 +1,6 @@
 import AssetManager from "./AssetManager";
 import Player from "./Player";
+import { STAGE_WIDTH, STAGE_HEIGHT } from "./Constants";
 
 export default class ScreenManager {
     // custom event for dispatching
@@ -14,20 +15,25 @@ export default class ScreenManager {
     private cursor:createjs.Sprite;
     private stage:createjs.StageGL;
 
-    private eventNewGame:createjs.Event;
+    private eventCardSwap:createjs.Event;
 
     constructor(stage:createjs.StageGL, assetManager:AssetManager) {
         this.stage = stage;
         this.assetManager = assetManager;
+
+        // construct background sprite
+        let background:createjs.Sprite = assetManager.getSprite("sprites","screens/background",0,0);
+        background.scaleX = STAGE_WIDTH;
+        background.scaleY = STAGE_HEIGHT;
+        stage.addChild(background);  
 
         // // using containers to contain several displayobjects for easy adding / removing from stage
         // this.introScreen = new createjs.Container(); 
         // this.introScreen.addChild(assetManager.getSprite("sprites","misc/backgroundIntro",0,0));
         // this.introScreen.addChild(bugSprite);
 
-        // construct cursor sprite for mouse pointer
+        // summary screen initialization
         this.cursor = assetManager.getSprite("sprites", "cursors/checkmark", 0, 0);
-
         this.summaryScreen = new createjs.Container();
         this.summaryScreen.x = 123;
         this.summaryScreen.y = 140;
@@ -40,6 +46,8 @@ export default class ScreenManager {
             this.txtScores.push(txtScore);
             dropY += 35;
         }
+        this.summaryScreen.on("mouseover", this.onOver, this);
+        this.summaryScreen.on("mouseout", this.onOut, this);
 
         // this.gameOverScreen = new createjs.Container();
         // this.gameOverScreen.addChild(assetManager.getSprite("sprites","misc/backgroundGame",0,0));
@@ -49,7 +57,7 @@ export default class ScreenManager {
         // this.gameScreen = assetManager.getSprite("sprites","misc/backgroundGame",0,0);
 
         // construct custom event objects
-        this.eventNewGame = new createjs.Event("newGame", true, false);
+        this.eventCardSwap = new createjs.Event("roundCardSwap", true, false);
         // this.eventResetGame = new createjs.Event("gameReset", true, false);
     }
 
@@ -106,12 +114,16 @@ export default class ScreenManager {
         this.stage.addChildAt(this.summaryScreen,1);
 
         // wire up listener to detect click event once and dispatch custom event
-        this.summaryScreen.on("click", (e) => {
-            this.stage.dispatchEvent(this.eventNewGame);
+        this.summaryScreen.on("click", (e:createjs.Event) => {
+            this.summaryScreen.cursor = "default";
+            this.stage.removeChild(this.cursor);
+            this.stage.dispatchEvent(this.eventCardSwap);
         }, this, true);
+    }
 
-        this.summaryScreen.on("mouseover", this.onOver, this);
-        this.summaryScreen.on("mouseout", this.onOut, this);
+    public showCardSwap():void {
+        this.hideAll();
+
     }
 
     // --------------------------------------------------- public methods

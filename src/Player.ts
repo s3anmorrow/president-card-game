@@ -2,6 +2,7 @@ import Card from "./Card";
 import Table from "./Table";
 import { randomMe } from "./Toolkit";
 import AssetManager from "./AssetManager";
+import HumanPlayer from "./HumanPlayer";
 
 export default abstract class Player {
     // state class constants
@@ -9,7 +10,7 @@ export default abstract class Player {
     public static STATE_CARDS_NOT_SELECTED:number = 2;
     public static STATE_NOT_PLAYING:number = 3;
     public static STATE_DISABLED:number = 4;
-    public static STATE_OUT:number = 3;
+    public static STATE_OUT:number = 5;
 
     public static ORIENTATION_LEFT:number = 1;
     public static ORIENTATION_TOP:number = 2;
@@ -98,8 +99,9 @@ export default abstract class Player {
     }
 
     // -------------------------------------------------- public methods
-    public dealCard():void {
-        if (this.deck.length <= 0) return;
+    public dealCard():boolean {
+        if (this.deck.length <= 0) return true;
+
         // deal a single card to the player (remove it from the deck)
         let index:number = randomMe(0, this.deck.length - 1);
         this._hand.push(this.deck[index]);
@@ -108,10 +110,9 @@ export default abstract class Player {
         this.deck.splice(index,1);	
 
         // player is now playing!
-        this._state = Player.STATE_CARDS_NOT_SELECTED;
+        if (this._state != Player.STATE_DISABLED) this._state = Player.STATE_CARDS_NOT_SELECTED;
 
-        // cards are dealt - position on stage
-        this.table.refreshCards(this);
+        return false;
 	}
 
     public revealCards():void {
@@ -134,9 +135,6 @@ export default abstract class Player {
             // remove card from hand
             this._hand.splice(index,1);
         });
-                
-        // reposition the cards now that cards have been played
-        this.table.refreshCards(this);
 
         console.log("Player's selected cards:");
         console.log(this._selectedCards);
@@ -147,11 +145,15 @@ export default abstract class Player {
         if (this._score < 0) this._score = 0;
     }
 
-    public reset():void {
-        this._score = 0;
-        this._state = Player.STATE_NOT_PLAYING;
+    public reset(hard:boolean = false):void {
+        this._state = Player.STATE_CARDS_NOT_SELECTED;
+        if (hard) {
+            this._score = 0;
+            this._state = Player.STATE_NOT_PLAYING;    
+        }
         this._status = Player.STATUS_NEUTRAL;
         this._hand = [];
         this._selectedCards = [];
     }
+
 }
