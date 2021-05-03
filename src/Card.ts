@@ -19,6 +19,7 @@ export default class Card {
 
     private stage:createjs.StageGL;
     private sprite:createjs.Sprite;
+    private turnMarker:createjs.Sprite;
     private table:Table;
     private upFrame:string;
     private overFrame:string;
@@ -37,6 +38,7 @@ export default class Card {
         this.faceDownFrame = "cards/facedown";
 
         this.sprite = assetManager.getSprite("sprites", this.upFrame, 0, 0);
+        this.turnMarker = assetManager.getSprite("sprites", "cards/turnMarker", 0, 0);
 
         this.sprite.on("mouseover", this.onOver, this);
         this.sprite.on("mouseout", this.onOut, this);
@@ -92,8 +94,19 @@ export default class Card {
         this.stage.addChild(this.sprite);
     }
 
+    public showTurnMarker():void {
+        this.turnMarker.x = this.sprite.x;
+        this.turnMarker.y = this.sprite.y;
+        this.stage.addChildAt(this.turnMarker, 1);
+    }
+
+    public hideTurnMarker():void {
+        this.stage.removeChild(this.turnMarker);
+    }
+
     public rotateMe(degree:number):void {
         this.sprite.rotation = degree;
+        this.turnMarker.rotation = degree;
     }
 
     public playMe():void {

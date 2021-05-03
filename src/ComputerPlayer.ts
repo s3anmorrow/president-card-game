@@ -4,15 +4,13 @@ import Table from "./Table";
 import Card from "./Card";
 import AssetManager from "./AssetManager";
 import { probabilityMe } from "./Toolkit";
-import { TURN_DELAY } from "./Constants";
 
 export default class ComputerPlayer extends Player {
 
     private humanPlayer:HumanPlayer;
-    private cursorDelayTimer:number;
 
-    constructor(stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], humanPlayer:HumanPlayer, table:Table) {
-        super(stage, assetManager, deck, table);
+    constructor(name:string, stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], humanPlayer:HumanPlayer, table:Table) {
+        super(name, stage, assetManager, deck, table);
         this.humanPlayer = humanPlayer;
     }
 
@@ -23,16 +21,6 @@ export default class ComputerPlayer extends Player {
             if (card.rank == rank) count++;
         });
         return count;
-    }
-
-    private pass():void {
-        // add pass cursor to stage for a limited time
-        this.cursor.x = 77;
-        this.cursor.y = 58;
-        this.table.playSpot.addChild(this.cursor);
-        this.cursorDelayTimer = window.setTimeout(() => {
-            this.table.playSpot.removeChild(this.cursor);
-        }, TURN_DELAY - 250);
     }
 
     // ---------------------------------------------- public methods
@@ -54,9 +42,6 @@ export default class ComputerPlayer extends Player {
         // initialize selected cards to none
         this._selectedCards = [];
 
-        console.log("Computer's playable hand:");
-        console.log(playableCards);
-
         // number of 2s in my hand
         let twoCount:number = this.countCards(this._hand, 2);
         let lowCount:number = 0;
@@ -65,7 +50,6 @@ export default class ComputerPlayer extends Player {
             lowCount = this.countCards(playableCards, playableCards[0].rank);
             highCount = this.countCards(playableCards, playableCards[playableCards.length - 1].rank)
         }
-        console.log("two count: " + twoCount);
 
         // is my card count low?
         let myLowAlert:boolean = (this._hand.length < LOW_CARD_THRESHOLD);
@@ -116,7 +100,7 @@ export default class ComputerPlayer extends Player {
                     this._selectedCards = this._hand.slice(0, 1);                    
                 } else if (probabilityMe(10)) {
                     // pass play - 10% chance to pass for no reason
-                    this.pass();
+                    this._selectedCards = [];
                     // return;
                 } else if (probabilityMe(50)) {
                     // high card play - play high card(s)
@@ -131,7 +115,7 @@ export default class ComputerPlayer extends Player {
                     // drop two to clear board
                     this._selectedCards = this._hand.slice(0, 1);
                 } else {
-                    this.pass();
+                    this._selectedCards = [];
                 }
             }
         }       
@@ -139,5 +123,4 @@ export default class ComputerPlayer extends Player {
         // do rest of work in superclass takeTurn()
         super.selectCards();
     }
-
 }

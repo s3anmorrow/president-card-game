@@ -10189,6 +10189,7 @@ class Card {
         this.overFrame = `cards/${this._suit}-${this._rank}_over`;
         this.faceDownFrame = "cards/facedown";
         this.sprite = assetManager.getSprite("sprites", this.upFrame, 0, 0);
+        this.turnMarker = assetManager.getSprite("sprites", "cards/turnMarker", 0, 0);
         this.sprite.on("mouseover", this.onOver, this);
         this.sprite.on("mouseout", this.onOut, this);
         this.sprite.on("click", this.onSelect, this);
@@ -10233,8 +10234,17 @@ class Card {
         this.sprite.gotoAndStop(this.faceDownFrame);
         this.stage.addChild(this.sprite);
     }
+    showTurnMarker() {
+        this.turnMarker.x = this.sprite.x;
+        this.turnMarker.y = this.sprite.y;
+        this.stage.addChildAt(this.turnMarker, 1);
+    }
+    hideTurnMarker() {
+        this.stage.removeChild(this.turnMarker);
+    }
     rotateMe(degree) {
         this.sprite.rotation = degree;
+        this.turnMarker.rotation = degree;
     }
     playMe() {
         this.rotateMe(0);
@@ -10280,10 +10290,9 @@ Card.STATE_PLAYED = 5;
 Object.defineProperty(exports, "__esModule", { value: true });
 const Player_1 = __webpack_require__(/*! ./Player */ "./src/Player.ts");
 const Toolkit_1 = __webpack_require__(/*! ./Toolkit */ "./src/Toolkit.ts");
-const Constants_1 = __webpack_require__(/*! ./Constants */ "./src/Constants.ts");
 class ComputerPlayer extends Player_1.default {
-    constructor(stage, assetManager, deck, humanPlayer, table) {
-        super(stage, assetManager, deck, table);
+    constructor(name, stage, assetManager, deck, humanPlayer, table) {
+        super(name, stage, assetManager, deck, table);
         this.humanPlayer = humanPlayer;
     }
     countCards(cards, rank) {
@@ -10294,14 +10303,6 @@ class ComputerPlayer extends Player_1.default {
         });
         return count;
     }
-    pass() {
-        this.cursor.x = 77;
-        this.cursor.y = 58;
-        this.table.playSpot.addChild(this.cursor);
-        this.cursorDelayTimer = window.setTimeout(() => {
-            this.table.playSpot.removeChild(this.cursor);
-        }, Constants_1.TURN_DELAY - 250);
-    }
     selectCards() {
         const LOW_CARD_THRESHOLD = 4;
         const HIGH_CARD_THRESHOLD = 6;
@@ -10311,8 +10312,6 @@ class ComputerPlayer extends Player_1.default {
             playedRank = this.table.playedCards[0].rank;
         let playableCards = this._hand.filter(card => ((this.countCards(this._hand, card.rank) >= playedCount) && (card.rank > playedRank)));
         this._selectedCards = [];
-        console.log("Computer's playable hand:");
-        console.log(playableCards);
         let twoCount = this.countCards(this._hand, 2);
         let lowCount = 0;
         let highCount = 0;
@@ -10320,7 +10319,6 @@ class ComputerPlayer extends Player_1.default {
             lowCount = this.countCards(playableCards, playableCards[0].rank);
             highCount = this.countCards(playableCards, playableCards[playableCards.length - 1].rank);
         }
-        console.log("two count: " + twoCount);
         let myLowAlert = (this._hand.length < LOW_CARD_THRESHOLD);
         let humanLowAlert = (this.humanPlayer.hand.length < LOW_CARD_THRESHOLD);
         if (playedCount == 0) {
@@ -10361,7 +10359,7 @@ class ComputerPlayer extends Player_1.default {
                     this._selectedCards = this._hand.slice(0, 1);
                 }
                 else if (Toolkit_1.probabilityMe(10)) {
-                    this.pass();
+                    this._selectedCards = [];
                 }
                 else if (Toolkit_1.probabilityMe(50)) {
                     this._selectedCards = playableCards.slice(-highCount);
@@ -10375,7 +10373,7 @@ class ComputerPlayer extends Player_1.default {
                     this._selectedCards = this._hand.slice(0, 1);
                 }
                 else {
-                    this.pass();
+                    this._selectedCards = [];
                 }
             }
         }
@@ -10397,14 +10395,13 @@ exports.default = ComputerPlayer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ASSET_MANIFEST = exports.TURN_DELAY = exports.COMPUTER_CARD_SPREAD = exports.PLAYER_CARD_SPREAD = exports.MAX_COMPUTER_PLAYERS = exports.FRAME_RATE = exports.STAGE_HEIGHT = exports.STAGE_WIDTH = void 0;
-exports.STAGE_WIDTH = 600;
-exports.STAGE_HEIGHT = 450;
+exports.ASSET_MANIFEST = exports.TURN_DELAY = exports.COMPUTER_CARD_SPREAD = exports.PLAYER_CARD_SPREAD = exports.FRAME_RATE = exports.STAGE_HEIGHT = exports.STAGE_WIDTH = void 0;
+exports.STAGE_WIDTH = 800;
+exports.STAGE_HEIGHT = 600;
 exports.FRAME_RATE = 30;
-exports.MAX_COMPUTER_PLAYERS = 3;
-exports.PLAYER_CARD_SPREAD = 20;
-exports.COMPUTER_CARD_SPREAD = 15;
-exports.TURN_DELAY = 1000;
+exports.PLAYER_CARD_SPREAD = 33;
+exports.COMPUTER_CARD_SPREAD = 20;
+exports.TURN_DELAY = 200;
 exports.ASSET_MANIFEST = [
     {
         type: "json",
@@ -10416,6 +10413,18 @@ exports.ASSET_MANIFEST = [
         type: "image",
         src: "./lib/spritesheets/sprites.png",
         id: "sprites",
+        data: 0
+    },
+    {
+        type: "json",
+        src: "./lib/spritesheets/glyphs.json",
+        id: "glyphs",
+        data: 0
+    },
+    {
+        type: "image",
+        src: "./lib/spritesheets/glyphs.png",
+        id: "glyphs",
         data: 0
     }
 ];
@@ -10436,6 +10445,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __webpack_require__(/*! createjs */ "./node_modules/createjs/builds/1.0.0/createjs.min.js");
 const Constants_1 = __webpack_require__(/*! ./Constants */ "./src/Constants.ts");
 const AssetManager_1 = __webpack_require__(/*! ./AssetManager */ "./src/AssetManager.ts");
+const ScreenManager_1 = __webpack_require__(/*! ./ScreenManager */ "./src/ScreenManager.ts");
 const Card_1 = __webpack_require__(/*! ./Card */ "./src/Card.ts");
 const HumanPlayer_1 = __webpack_require__(/*! ./HumanPlayer */ "./src/HumanPlayer.ts");
 const ComputerPlayer_1 = __webpack_require__(/*! ./ComputerPlayer */ "./src/ComputerPlayer.ts");
@@ -10444,6 +10454,7 @@ const Table_1 = __webpack_require__(/*! ./Table */ "./src/Table.ts");
 let stage;
 let canvas;
 let assetManager;
+let screenManager;
 let table;
 let humanPlayer;
 let computerPlayer1;
@@ -10451,12 +10462,15 @@ let computerPlayer2;
 let computerPlayer3;
 let players;
 let deck;
-let playerCount = 4;
+let playerTotalCount = 4;
 let turnIndex = 0;
-let turnDelayTimer;
+let turnTimer;
 let playType;
+let passCounter;
+let roundOn;
+let phase;
 function startGame() {
-    if (playerCount == 3) {
+    if (playerTotalCount == 3) {
         computerPlayer1.orientation = Player_1.default.ORIENTATION_LEFT;
         computerPlayer2.orientation = Player_1.default.ORIENTATION_RIGHT;
         players = [humanPlayer, computerPlayer1, computerPlayer2];
@@ -10467,80 +10481,162 @@ function startGame() {
         computerPlayer3.orientation = Player_1.default.ORIENTATION_RIGHT;
         players = [humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3];
     }
-    players.forEach(player => player.reset());
-    turnIndex = 0;
+    players.forEach(player => player.reset(true));
+    table.players = players;
+    table.reset();
+    stage.dispatchEvent(new createjs.Event("roundStart", true, false));
 }
-function startRound() {
-    while (true) {
-        for (let n = 0; n < playerCount; n++)
-            players[n].dealCard();
-        if (deck.length <= 0)
-            break;
+function processCards() {
+    if (!roundOn)
+        return;
+    if (playType == Player_1.default.PLAYED_TWO) {
+        console.log("=> CLEARED WITH TWO");
+        table.clearTable();
+        passCounter = 0;
     }
-    playType = Player_1.default.PLAYED_CARD;
-    if (turnIndex == 0)
-        onPlayerTurn();
-    else
-        turnDelayTimer = window.setInterval(onPlayerTurn, Constants_1.TURN_DELAY);
-}
-function nextPlayer() {
-    if (playType != Player_1.default.PLAYED_TWO) {
-        if (++turnIndex == playerCount)
+    else if (playType == Player_1.default.PLAYED_PASS) {
+        console.log("=> PASSED!");
+        table.showPass();
+        passCounter++;
+    }
+    if ((playType != Player_1.default.PLAYED_TWO) || (players[turnIndex].state == Player_1.default.STATE_OUT)) {
+        if (++turnIndex == playerTotalCount)
             turnIndex = 0;
         while (players[turnIndex].state == Player_1.default.STATE_OUT) {
-            if (++turnIndex == playerCount)
+            if (++turnIndex == playerTotalCount)
                 turnIndex = 0;
         }
+    }
+    if (playType != Player_1.default.PLAYED_PASS)
+        passCounter = 0;
+}
+function onTurn() {
+    if (phase == 1) {
+        console.log("********* PLAYER TURN ********************");
+        table.currentPlayer = players[turnIndex];
+        table.hidePass();
+        table.showTurnMarker();
+        if (passCounter == (players.length - 1)) {
+            console.log("=> CLEARED WITH PASS");
+            table.clearTable();
+            passCounter = 0;
+        }
+        phase++;
+    }
+    else if (phase == 2) {
+        if (players[turnIndex] instanceof HumanPlayer_1.default) {
+            console.log("=> PAUSED FOR HUMAN'S TURN");
+            window.clearInterval(turnTimer);
+            humanPlayer.enableMe();
+        }
+        else {
+            console.log("=> COMPUTER'S TURN");
+            players[turnIndex].selectCards();
+            table.refreshCards();
+            playType = table.playCards();
+            table.showTurnMarker();
+        }
+        phase++;
+    }
+    else {
+        processCards();
+        phase = 1;
+    }
+}
+function onGameEvent(e) {
+    switch (e.type) {
+        case "cardsSelected":
+            console.log("=> HUMAN'S TURN");
+            players[turnIndex].selectCards();
+            table.refreshCards();
+            playType = table.playCards();
+            table.showTurnMarker();
+            processCards();
+            phase = 1;
+            if (roundOn) {
+                console.log("=> UNPAUSING FOR HUMAN");
+                turnTimer = window.setInterval(onTurn, Constants_1.TURN_DELAY);
+            }
+            break;
+        case "humanOut":
+            break;
+        case "roundOver":
+            roundOn = false;
+            window.clearInterval(turnTimer);
+            table.showLoser();
+            players.sort((a, b) => {
+                if (a.status > b.status)
+                    return -1;
+                else if (a.status < b.status)
+                    return 1;
+                else
+                    return 0;
+            });
+            players.forEach(player => player.updateScore());
+            humanPlayer.disableMe();
+            table.hideMe();
+            screenManager.showSummary(players);
+            break;
+        case "roundCardSwap":
+            console.log("CARD SWAP");
+            console.table(deck);
+            console.log("human state: " + humanPlayer.state);
+            table.dealCards();
+            table.showMe();
+            turnIndex = players.findIndex(player => player instanceof HumanPlayer_1.default);
+            table.currentPlayer = players[turnIndex];
+            table.showTurnMarker();
+            screenManager.showCardSwap();
+            break;
+        case "roundStart":
+            console.log("NEW ROUND");
+            passCounter = 0;
+            turnIndex = 0;
+            table.currentPlayer = players[turnIndex];
+            phase = 1;
+            roundOn = true;
+            playType = Player_1.default.PLAYED_NONE;
+            table.dealCards();
+            if (players[turnIndex] instanceof HumanPlayer_1.default) {
+                onTurn();
+                humanPlayer.enableMe();
+            }
+            else {
+                turnTimer = window.setInterval(onTurn, Constants_1.TURN_DELAY);
+                humanPlayer.disableMe();
+            }
+            break;
+        case "gameOver":
+            break;
     }
 }
 function onReady(e) {
     console.log(">> adding sprites to game");
+    screenManager = new ScreenManager_1.default(stage, assetManager);
     table = new Table_1.default(stage, assetManager);
     deck = [];
-    for (let n = 2; n <= 14; n++) {
+    for (let n = 2; n <= 10; n++) {
         deck.push(new Card_1.default(stage, assetManager, table, "C", n));
-        deck.push(new Card_1.default(stage, assetManager, table, "H", n));
-        deck.push(new Card_1.default(stage, assetManager, table, "D", n));
-        deck.push(new Card_1.default(stage, assetManager, table, "S", n));
     }
-    humanPlayer = new HumanPlayer_1.default(stage, assetManager, deck, table);
-    computerPlayer1 = new ComputerPlayer_1.default(stage, assetManager, deck, humanPlayer, table);
-    computerPlayer2 = new ComputerPlayer_1.default(stage, assetManager, deck, humanPlayer, table);
-    computerPlayer3 = new ComputerPlayer_1.default(stage, assetManager, deck, humanPlayer, table);
+    humanPlayer = new HumanPlayer_1.default("You", stage, assetManager, deck, table);
+    computerPlayer1 = new ComputerPlayer_1.default("Shifty", stage, assetManager, deck, humanPlayer, table);
+    computerPlayer2 = new ComputerPlayer_1.default("Janky", stage, assetManager, deck, humanPlayer, table);
+    computerPlayer3 = new ComputerPlayer_1.default("Clyde", stage, assetManager, deck, humanPlayer, table);
+    stage.on("roundOver", onGameEvent);
+    stage.on("roundStart", onGameEvent);
+    stage.on("roundCardSwap", onGameEvent);
+    stage.on("gameOver", onGameEvent);
+    stage.on("humanOut", onGameEvent);
+    stage.on("cardsSelected", onGameEvent);
     startGame();
-    startRound();
     createjs.Ticker.framerate = Constants_1.FRAME_RATE;
     createjs.Ticker.on("tick", onTick);
     console.log(">> game ready");
 }
-function onPlayerTurn() {
-    table.player = players[turnIndex];
-    if ((playType == Player_1.default.PLAYED_TWO) || (table.playerStartingRound == players[turnIndex])) {
-        console.log("STARTING new round!");
-        table.clearTable();
-        playType = Player_1.default.PLAYED_NONE;
-    }
-    else if (players[turnIndex] instanceof ComputerPlayer_1.default) {
-        console.log("********* COMPUTER'S TURN ********************");
-        players[turnIndex].selectCards();
-        playType = table.playCards();
-        nextPlayer();
-    }
-    else {
-        console.log("********* HUMAN'S TURN ********************");
-        window.clearInterval(turnDelayTimer);
-        humanPlayer.enableMe();
-        table.playSpot.on("cardsSelected", (e) => {
-            players[turnIndex].selectCards();
-            playType = table.playCards();
-            nextPlayer();
-            turnDelayTimer = window.setInterval(onPlayerTurn, Constants_1.TURN_DELAY);
-        }, this, true);
-    }
-}
 function onTick(e) {
     document.getElementById("fps").innerHTML = String(createjs.Ticker.getMeasuredFPS());
     humanPlayer.update();
+    screenManager.update();
     stage.update();
 }
 function main() {
@@ -10572,17 +10668,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Player_1 = __webpack_require__(/*! ./Player */ "./src/Player.ts");
 const Card_1 = __webpack_require__(/*! ./Card */ "./src/Card.ts");
 class HumanPlayer extends Player_1.default {
-    constructor(stage, assetManager, deck, table) {
-        super(stage, assetManager, deck, table);
+    constructor(name, stage, assetManager, deck, table) {
+        super(name, stage, assetManager, deck, table);
         this.playSpot = table.playSpot;
+        this.cursor = assetManager.getSprite("sprites", "cursors/pass", 0, 0);
         this.playSpot.on("mouseover", this.onOver, this);
         this.playSpot.on("mouseout", this.onOut, this);
         this.playSpot.on("click", this.onClick, this);
         stage.on("cardSelected", this.onCardEvent, this);
         stage.on("cardDeselected", this.onCardEvent, this);
-        this.eventHumanTookTurn = new createjs.Event("cardsSelected", true, false);
+        this.eventCardsSelected = new createjs.Event("cardsSelected", true, false);
     }
     update() {
+        if (this._state == Player_1.default.STATE_DISABLED)
+            return;
         this.cursor.x = this.stage.mouseX;
         this.cursor.y = this.stage.mouseY;
     }
@@ -10608,7 +10707,7 @@ class HumanPlayer extends Player_1.default {
             this._selectedCards = [];
             this.disableMe();
         }
-        this.playSpot.dispatchEvent(this.eventHumanTookTurn);
+        this.playSpot.dispatchEvent(this.eventCardsSelected);
     }
     onOver(e) {
         if (this._state == Player_1.default.STATE_DISABLED)
@@ -10673,15 +10772,19 @@ exports.default = HumanPlayer;
 Object.defineProperty(exports, "__esModule", { value: true });
 const Toolkit_1 = __webpack_require__(/*! ./Toolkit */ "./src/Toolkit.ts");
 class Player {
-    constructor(stage, assetManager, deck, table) {
+    constructor(name, stage, assetManager, deck, table) {
         this.reset();
+        this._name = name;
+        this._score = 0;
         this.stage = stage;
         this.deck = deck;
         this.table = table;
         this._state = Player.STATE_NOT_PLAYING;
         this._status = Player.STATUS_NEUTRAL;
         this._orientation = Player.ORIENTATION_BOTTOM;
-        this.cursor = assetManager.getSprite("sprites", "cursors/pass", 0, 0);
+    }
+    get name() {
+        return this._name;
     }
     get hand() {
         return this._hand;
@@ -10701,21 +10804,31 @@ class Player {
     get status() {
         return this._status;
     }
+    set status(value) {
+        this._status = value;
+    }
     set orientation(value) {
         this._orientation = value;
     }
     get orientation() {
         return this._orientation;
     }
+    get score() {
+        return this._score;
+    }
     dealCard() {
         if (this.deck.length <= 0)
-            return;
+            return true;
         let index = Toolkit_1.randomMe(0, this.deck.length - 1);
         this._hand.push(this.deck[index]);
         this.deck[index].reset();
         this.deck.splice(index, 1);
-        this._state = Player.STATE_CARDS_NOT_SELECTED;
-        this.table.refreshCards(this);
+        if (this._state != Player.STATE_DISABLED)
+            this._state = Player.STATE_CARDS_NOT_SELECTED;
+        return false;
+    }
+    revealCards() {
+        this._hand.forEach(card => card.showFaceUp());
     }
     returnCards(deck) {
         for (let card of this._hand)
@@ -10726,14 +10839,24 @@ class Player {
         this._selectedCards.forEach(selectedCard => {
             let index = this._hand.findIndex(card => card == selectedCard);
             this.deck.push(this._hand[index]);
+            this._hand[index].hideTurnMarker();
             this._hand.splice(index, 1);
         });
-        this.table.refreshCards(this);
         console.log("Player's selected cards:");
         console.log(this._selectedCards);
     }
-    reset() {
-        this._state = Player.STATE_NOT_PLAYING;
+    updateScore() {
+        this._score = this._score + this._status;
+        if (this._score < 0)
+            this._score = 0;
+    }
+    reset(hard = false) {
+        this._state = Player.STATE_CARDS_NOT_SELECTED;
+        if (hard) {
+            this._score = 0;
+            this._state = Player.STATE_NOT_PLAYING;
+        }
+        this._status = Player.STATUS_NEUTRAL;
         this._hand = [];
         this._selectedCards = [];
     }
@@ -10743,7 +10866,7 @@ Player.STATE_CARDS_SELECTED = 1;
 Player.STATE_CARDS_NOT_SELECTED = 2;
 Player.STATE_NOT_PLAYING = 3;
 Player.STATE_DISABLED = 4;
-Player.STATE_OUT = 3;
+Player.STATE_OUT = 5;
 Player.ORIENTATION_LEFT = 1;
 Player.ORIENTATION_TOP = 2;
 Player.ORIENTATION_RIGHT = 3;
@@ -10757,6 +10880,101 @@ Player.PLAYED_PASS = 0;
 Player.PLAYED_TWO = 1;
 Player.PLAYED_CARD = 2;
 Player.PLAYED_NONE = 3;
+
+
+/***/ }),
+
+/***/ "./src/ScreenManager.ts":
+/*!******************************!*\
+  !*** ./src/ScreenManager.ts ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const Constants_1 = __webpack_require__(/*! ./Constants */ "./src/Constants.ts");
+class ScreenManager {
+    constructor(stage, assetManager) {
+        this.stage = stage;
+        this.assetManager = assetManager;
+        let background = assetManager.getSprite("sprites", "screens/background", 0, 0);
+        background.scaleX = Constants_1.STAGE_WIDTH;
+        background.scaleY = Constants_1.STAGE_HEIGHT;
+        stage.addChild(background);
+        this.cursor = assetManager.getSprite("sprites", "cursors/checkmark", 0, 0);
+        this.summaryScreen = new createjs.Container();
+        this.summaryScreen.x = 123;
+        this.summaryScreen.y = 140;
+        this.txtScores = [];
+        let dropY = 115;
+        for (let n = 0; n < 4; n++) {
+            let txtScore = new createjs.BitmapText("0", assetManager.getSpriteSheet("glyphs"));
+            txtScore.x = 436;
+            txtScore.y = dropY;
+            this.txtScores.push(txtScore);
+            dropY += 35;
+        }
+        this.summaryScreen.on("mouseover", this.onOver, this);
+        this.summaryScreen.on("mouseout", this.onOut, this);
+        this.eventCardSwap = new createjs.Event("roundCardSwap", true, false);
+    }
+    showIntro() {
+        this.hideAll();
+    }
+    showSummary(players) {
+        this.hideAll();
+        let dropY = 115;
+        this.summaryScreen.removeAllChildren();
+        this.summaryScreen.addChild(this.assetManager.getSprite("sprites", "screens/summary", 0, 0));
+        players.forEach((player, index) => {
+            this.summaryScreen.addChild(this.assetManager.getSprite("sprites", "screens/summary" + player.name, 139, dropY));
+            let statusName;
+            if (player.status == 2)
+                statusName = "President";
+            else if (player.status == 1)
+                statusName = "VicePresident";
+            else if (player.status == 0)
+                statusName = "Neutral";
+            else if (player.status == -1)
+                statusName = "ViceAhole";
+            else if (player.status == -2)
+                statusName = "Ahole";
+            this.summaryScreen.addChild(this.assetManager.getSprite("sprites", "screens/summary" + statusName, 173, dropY));
+            this.txtScores[index].text = player.score.toString();
+            this.summaryScreen.addChild(this.txtScores[index]);
+            dropY += 35;
+        });
+        this.stage.addChildAt(this.summaryScreen, 1);
+        this.summaryScreen.on("click", (e) => {
+            this.summaryScreen.cursor = "default";
+            this.stage.removeChild(this.cursor);
+            this.stage.dispatchEvent(this.eventCardSwap);
+        }, this, true);
+    }
+    showCardSwap() {
+        this.hideAll();
+    }
+    update() {
+        this.cursor.x = this.stage.mouseX;
+        this.cursor.y = this.stage.mouseY;
+    }
+    onOver(e) {
+        this.summaryScreen.cursor = "none";
+        this.cursor.x = this.stage.mouseX;
+        this.cursor.y = this.stage.mouseY;
+        this.stage.addChild(this.cursor);
+    }
+    onOut(e) {
+        this.summaryScreen.cursor = "default";
+        this.stage.removeChild(this.cursor);
+    }
+    hideAll() {
+        this.stage.removeChild(this.summaryScreen);
+    }
+}
+exports.default = ScreenManager;
 
 
 /***/ }),
@@ -10778,47 +10996,35 @@ const Constants_1 = __webpack_require__(/*! ./Constants */ "./src/Constants.ts")
 class Table {
     constructor(stage, assetManager) {
         this.stage = stage;
-        this._playerStartingRound = null;
         this._playedCards = [];
-        this._playersOut = [];
-        let background = assetManager.getSprite("sprites", "screens/background", 0, 0);
-        background.scaleX = Constants_1.STAGE_WIDTH;
-        background.scaleY = Constants_1.STAGE_HEIGHT;
-        stage.addChild(background);
-        this.sprite = assetManager.getSprite("sprites", "screens/table", 142, 110);
-        this.stage.addChild(this.sprite);
-        this.turnPointer = assetManager.getSprite("sprites", "icons/turnPointer", 0, 0);
-        this.stage.addChild(this.turnPointer);
+        this.statusCounter = 0;
+        this.playersInRound = 0;
+        this.labelContainer = new createjs.Container();
+        this.labelContainer.addChild(assetManager.getSprite("sprites", "screens/tableLabel1", 400, 145));
+        this.labelContainer.addChild(assetManager.getSprite("sprites", "screens/tableLabel2", 400, 354));
+        this.labelContainer.addChild(assetManager.getSprite("sprites", "screens/tableLabel3", 400, 376));
+        this.stage.addChild(this.labelContainer);
         this._playSpot = new createjs.Container();
-        this._playSpot.x = 212;
-        this._playSpot.y = 133;
-        let playSpotBackground = assetManager.getSprite("sprites", "screens/playSpot", 0, 0);
-        this._playSpot.addChild(playSpotBackground);
+        this._playSpot.x = 291;
+        this._playSpot.y = 168;
+        this._playSpot.addChild(assetManager.getSprite("sprites", "screens/playSpot", 0, 0));
         this.stage.addChild(this._playSpot);
+        this.passIndicator = assetManager.getSprite("sprites", "cursors/pass", 109, 83);
+        this.eventRoundOver = new createjs.Event("roundOver", true, false);
+        this.eventHumanOut = new createjs.Event("humanOut", true, false);
     }
-    set player(value) {
-        this._player = value;
-        switch (this._player.orientation) {
-            case Player_1.default.ORIENTATION_BOTTOM:
-                this.turnPointer.x = 300;
-                this.turnPointer.y = 300;
-                break;
-            case Player_1.default.ORIENTATION_TOP:
-                this.turnPointer.x = 300;
-                this.turnPointer.y = 100;
-                break;
-            case Player_1.default.ORIENTATION_LEFT:
-                this.turnPointer.x = 100;
-                this.turnPointer.y = 150;
-                break;
-            case Player_1.default.ORIENTATION_RIGHT:
-                this.turnPointer.x = 450;
-                this.turnPointer.y = 150;
-                break;
-        }
+    set currentPlayer(value) {
+        this._currentPlayer = value;
     }
-    get playerStartingRound() {
-        return this._playerStartingRound;
+    get currentPlayer() {
+        return this._currentPlayer;
+    }
+    set players(value) {
+        this._players = value;
+        if (this._players.length == 4)
+            this.statusRankings = [2, 1, -1, -2];
+        else
+            this.statusRankings = [1, 0, -1];
     }
     get playSpot() {
         return this._playSpot;
@@ -10826,50 +11032,81 @@ class Table {
     get playedCards() {
         return this._playedCards;
     }
-    get playersOut() {
-        return this._playersOut;
-    }
     reset() {
+        this.hidePass();
         this.clearTable();
-        this._playersOut = [];
-        this._playerStartingRound = null;
+        this.hidePass();
+        this.playersInRound = this._players.length;
+        this.statusCounter = 0;
+        this._playedCards = [];
     }
     clearTable() {
-        console.log("CLEARING TABLE");
         this._playedCards.forEach(card => card.hideMe());
         this._playedCards = [];
-        this._playerStartingRound = null;
+    }
+    showPass() {
+        if (this._currentPlayer instanceof ComputerPlayer_1.default)
+            this._playSpot.addChild(this.passIndicator);
+    }
+    hidePass() {
+        this._playSpot.removeChild(this.passIndicator);
+    }
+    showLoser() {
+        let loser = this._players.find(player => player.state != Player_1.default.STATE_OUT);
+        this.currentPlayer = loser;
+        this.showTurnMarker();
+        loser.revealCards();
+        loser.status = this.statusRankings[this.statusCounter];
+    }
+    hideMe() {
+        this.stage.removeChild(this.labelContainer);
+        this.stage.removeChild(this.playSpot);
+    }
+    showMe() {
+        this.stage.addChildAt(this.labelContainer, 1);
+        this.stage.addChildAt(this.playSpot, 1);
+    }
+    dealCards() {
+        while (true) {
+            let finished;
+            this._players.forEach(player => finished = player.dealCard());
+            if (finished)
+                break;
+        }
+        this.refreshCards();
     }
     playCards() {
-        let selectedCards = this._player.selectedCards;
+        let selectedCards = this._currentPlayer.selectedCards;
         let playType = Player_1.default.PLAYED_CARD;
         if (selectedCards.length == 0)
             playType = Player_1.default.PLAYED_PASS;
         else if (selectedCards[0].rank == 2)
             playType = Player_1.default.PLAYED_TWO;
-        if ((playType == Player_1.default.PLAYED_CARD) || (this._playerStartingRound == null)) {
-            this._playerStartingRound = this._player;
-        }
         if (playType != Player_1.default.PLAYED_PASS) {
             this._playedCards.forEach(card => card.hideMe());
             this._playedCards = selectedCards;
-            let dropSpotX = (155 - ((selectedCards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) - 71) / 2;
+            let dropSpotX = (218 - ((selectedCards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) - 99) / 2;
             selectedCards.forEach(card => {
-                card.positionMe(dropSpotX, 10);
+                card.positionMe(dropSpotX, 15);
                 card.playMe();
                 dropSpotX = dropSpotX + Constants_1.PLAYER_CARD_SPREAD;
             });
         }
-        if (this._player.hand.length == 0) {
-            this._player.state = Player_1.default.STATE_OUT;
-            this._playersOut.push(this._player);
-            console.log("*** PLAYER OUT");
-            this._playerStartingRound = null;
+        if (this._currentPlayer.hand.length == 0) {
+            this._currentPlayer.state = Player_1.default.STATE_OUT;
+            this._currentPlayer.status = this.statusRankings[this.statusCounter];
+            this.statusCounter++;
+            this.playersInRound--;
+            console.log("*** PLAYER OUT with status " + this._currentPlayer.status + " : number left " + this.playersInRound);
+            if (this._currentPlayer instanceof HumanPlayer_1.default)
+                this.stage.dispatchEvent(this.eventHumanOut);
+            if (this.playersInRound <= 1)
+                this.stage.dispatchEvent(this.eventRoundOver);
         }
         return playType;
     }
     validateCards() {
-        let selectedCards = this._player.selectedCards;
+        let selectedCards = this._currentPlayer.selectedCards;
         if (this._playedCards.length == 0)
             return true;
         if ((selectedCards.length == this._playedCards.length) || (selectedCards[0].rank == 2)) {
@@ -10879,57 +11116,59 @@ class Table {
         }
         return false;
     }
-    refreshCards(player) {
-        let dropSpotX = 0;
-        let dropSpotY = 340;
-        let cards = player.hand;
-        cards.sort(this.sortCompare);
-        if (player instanceof HumanPlayer_1.default) {
-            dropSpotX = Math.floor((Constants_1.STAGE_WIDTH - (((cards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) + 71)) / 2);
-            for (let card of cards) {
-                card.positionMe(dropSpotX, dropSpotY);
-                card.showFaceUp();
-                dropSpotX = dropSpotX + Constants_1.PLAYER_CARD_SPREAD;
+    showTurnMarker() {
+        this._players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
+        this._currentPlayer.hand.forEach(card => card.showTurnMarker());
+    }
+    refreshCards() {
+        let dropSpotX;
+        let dropSpotY;
+        let cards;
+        for (let player of this._players) {
+            cards = player.hand;
+            cards.sort((a, b) => {
+                if (a.rank < b.rank)
+                    return -1;
+                else if (a.rank > b.rank)
+                    return 1;
+                else
+                    return 0;
+            });
+            if (player.orientation == Player_1.default.ORIENTATION_LEFT) {
+                dropSpotX = 80;
+                dropSpotY = Math.floor((Constants_1.STAGE_HEIGHT - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 99)) / 2);
             }
-        }
-        else {
-            if (player.orientation == ComputerPlayer_1.default.ORIENTATION_LEFT) {
-                dropSpotX = 40;
-                dropSpotY = Math.floor((Constants_1.STAGE_HEIGHT - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 71)) / 2);
+            else if (player.orientation == Player_1.default.ORIENTATION_RIGHT) {
+                dropSpotX = 850;
+                dropSpotY = Math.floor((Constants_1.STAGE_HEIGHT - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 99)) / 2);
             }
-            else if (player.orientation == ComputerPlayer_1.default.ORIENTATION_RIGHT) {
-                dropSpotX = 650;
-                dropSpotY = Math.floor((Constants_1.STAGE_HEIGHT - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 71)) / 2);
+            else if (player.orientation == Player_1.default.ORIENTATION_TOP) {
+                dropSpotX = Math.floor((Constants_1.STAGE_WIDTH - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 99)) / 2);
+                dropSpotY = -50;
             }
             else {
-                dropSpotX = Math.floor((Constants_1.STAGE_WIDTH - (((cards.length - 1) * Constants_1.COMPUTER_CARD_SPREAD) + 71)) / 2);
-                dropSpotY = -40;
+                dropSpotX = Math.floor((Constants_1.STAGE_WIDTH - (((cards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) + 99)) / 2);
+                dropSpotY = 440;
             }
             for (let card of cards) {
                 card.positionMe(dropSpotX, dropSpotY);
-                card.showFaceDown();
                 card.disableMe();
-                if ((player.orientation == ComputerPlayer_1.default.ORIENTATION_LEFT) || (player.orientation == ComputerPlayer_1.default.ORIENTATION_RIGHT)) {
+                if ((player.orientation == Player_1.default.ORIENTATION_LEFT) || (player.orientation == Player_1.default.ORIENTATION_RIGHT)) {
                     card.rotateMe(90);
+                    card.showFaceDown();
                     dropSpotY = dropSpotY + Constants_1.COMPUTER_CARD_SPREAD;
+                }
+                else if (player.orientation == Player_1.default.ORIENTATION_TOP) {
+                    card.rotateMe(0);
+                    card.showFaceDown();
+                    dropSpotX = dropSpotX + Constants_1.COMPUTER_CARD_SPREAD;
                 }
                 else {
                     card.rotateMe(0);
-                    dropSpotX = dropSpotX + Constants_1.COMPUTER_CARD_SPREAD;
+                    card.showFaceUp();
+                    dropSpotX = dropSpotX + Constants_1.PLAYER_CARD_SPREAD;
                 }
             }
-        }
-        this.stage.addChild(this._playSpot);
-    }
-    sortCompare(a, b) {
-        if (a.rank < b.rank) {
-            return -1;
-        }
-        else if (a.rank > b.rank) {
-            return 1;
-        }
-        else {
-            return 0;
         }
     }
 }

@@ -6,13 +6,16 @@ import AssetManager from "./AssetManager";
 export default class HumanPlayer extends Player {
 
     private playSpot:createjs.Container;
-    private eventHumanTookTurn:createjs.Event;
+    private cursor:createjs.Sprite;
+    private eventCardsSelected:createjs.Event;
 
-    constructor(stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], table:Table) {
-        super(stage, assetManager, deck, table);
+    constructor(name:string, stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], table:Table) {
+        super(name, stage, assetManager, deck, table);
 
         // initialialization
         this.playSpot = table.playSpot;
+        // construct cursor sprite for mouse pointer (human player)
+        this.cursor = assetManager.getSprite("sprites", "cursors/pass", 0, 0);
 
         // add event listeners
         this.playSpot.on("mouseover", this.onOver, this);
@@ -23,11 +26,12 @@ export default class HumanPlayer extends Player {
         stage.on("cardSelected", this.onCardEvent, this);
         stage.on("cardDeselected", this.onCardEvent, this);
 
-        this.eventHumanTookTurn = new createjs.Event("cardsSelected", true, false);
+        this.eventCardsSelected = new createjs.Event("cardsSelected", true, false);
     }
    
     // --------------------------------------------------- public methods
     public update():void {
+        if (this._state == Player.STATE_DISABLED) return;
         this.cursor.x = this.stage.mouseX;
         this.cursor.y = this.stage.mouseY;
     }    
@@ -58,7 +62,7 @@ export default class HumanPlayer extends Player {
             this.disableMe();
         }
 
-        this.playSpot.dispatchEvent(this.eventHumanTookTurn);
+        this.playSpot.dispatchEvent(this.eventCardsSelected);
     }
 
     private onOver(e:createjs.Event):void {
