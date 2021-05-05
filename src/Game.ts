@@ -216,11 +216,11 @@ function onGameEvent(e:createjs.Event):void {
             // ??????????
             // TODO handle when humanplayer is neutral (3 players)
             // TODO add names to players on table
-            // TODO points system to end the game
             // TODO speed up game when human is out
             // TODO random player to start when new game
             // TODO remove all the player[turnIndex] in Game.ts
             // TODO add squares to corner of stage
+            // TODO fix issue with mouseover cards
             
         case "startAnotherRound":
             console.log("NEW ROUND");                

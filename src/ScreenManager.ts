@@ -254,5 +254,6 @@ export default class ScreenManager {
         this.stage.removeChild(this.summaryScreen);
         this.stage.removeChild(this.swapScreen);
         this.stage.removeChild(this.gameScreen);
+        this.stage.removeChild(this.gameOverScreen);
     }
 }
