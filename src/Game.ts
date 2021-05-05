@@ -1,16 +1,19 @@
-// TODO resetting game
-// TODO start screen
-// TODO picking lowest cards for human
-// TODO points system?
+// ??????????
+// TODO handle when humanplayer is neutral (3 players)
+// TODO add names to players on table
+// TODO speed up game when human is out
+// TODO random player to start when new game
+// TODO remove all the player[turnIndex] in Game.ts
+// TODO add squares to corner of stage
+// TODO fix issue with mouseover cards
+
 
 // createjs typescript definition for TypeScript
 /// <reference path="./../node_modules/@types/createjs/index.d.ts" />
-
 // importing createjs framework
 import "createjs";
 // importing game constants
-import { STAGE_WIDTH, STAGE_HEIGHT, FRAME_RATE, ASSET_MANIFEST, TURN_DELAY } from "./Constants";
-import { randomMe } from "./Toolkit";
+import { STAGE_WIDTH, STAGE_HEIGHT, FRAME_RATE, ASSET_MANIFEST, TURN_DELAY, WIN_SCORE } from "./Constants";
 import AssetManager from "./AssetManager";
 import ScreenManager from "./ScreenManager";
 import Card from "./Card";
@@ -38,39 +41,64 @@ let deck:Card[];
 let playerTotalCount:number = 4;  // 4 or 3
 let turnIndex:number = 0;
 let turnTimer:number;
+let turnPhase:number;
 let playType:number;
 let passCounter:number;
 let roundOn:boolean;
-let phase:number;
+let gameOn:boolean;
 
 // --------------------------------------------------- private methods
 function startGame():void {
-    // initialization
-    if (playerTotalCount == 3) {           
-        computerPlayer1.orientation = Player.ORIENTATION_LEFT;
-        computerPlayer2.orientation = Player.ORIENTATION_RIGHT;
-        players = [humanPlayer, computerPlayer1, computerPlayer2];
-    } else {
-        computerPlayer1.orientation = Player.ORIENTATION_LEFT;
-        computerPlayer2.orientation = Player.ORIENTATION_TOP;
-        computerPlayer3.orientation = Player.ORIENTATION_RIGHT;
-        players = [humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3];
-    }
-    
-    // hard reset all players
-    players.forEach(player => player.reset(true));  
+    gameOn = true;
 
-    // table needs to know who all the players re
-    table.players = players;
-    table.reset();
-    
+    // hard reset all possible players for new game (despite whether will be in game or not)
+    humanPlayer.hardReset();
+    computerPlayer1.hardReset();
+    computerPlayer2.hardReset();
+    computerPlayer3.hardReset();
+
+    // setup table with players for new game
+    if (playerTotalCount == 3) table.setup(humanPlayer, computerPlayer1, computerPlayer2);
+    else table.setup(humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3);
+
+    // ?????? use table.players throughout?
+    players = table.players;
+    // ??????
+
+    // new game - deal the cards before starting the round
+    table.dealCards();
+
+    startRound();
+}
+
+function startRound():void {
+    roundOn = true;            
+    passCounter = 0;
+    turnIndex = 0;
+    turnPhase = 1;
+    playType = Player.PLAYED_NONE;
+
+    // soft reset all players for new round
+    players.forEach(player => player.softReset()); 
+
+    // ????????????????
     // // when game first starts, randomly pick who goes first
     // // turnIndex = randomMe(0, players.length - 1);
     // turnIndex = 0;
-    // table.player = players[turnIndex];
+    // table.player = players[turnIndex]; 
 
-    // start the round with manual event dispatch
-    stage.dispatchEvent(new createjs.Event("roundStart", true, false));
+    table.currentPlayer = players[turnIndex];
+    table.showMe();
+    screenManager.showGame();
+
+    // start the turn timer if not currently human's turn
+    if (players[turnIndex] instanceof HumanPlayer) {
+        onTurn();
+        humanPlayer.enableMe();
+    } else {
+        turnTimer = window.setInterval(onTurn, TURN_DELAY);
+        humanPlayer.disableMe();
+    }
 }
 
 function processCards():void {
@@ -101,7 +129,7 @@ function processCards():void {
 
 // --------------------------------------------------- event handlers
 function onTurn() { 
-    if (phase == 1) {
+    if (turnPhase == 1) {
         // TURN PHASE I : highlighting current player
         console.log("********* PLAYER TURN ********************");       
         // setup table for turn
@@ -115,8 +143,8 @@ function onTurn() {
             table.clearTable();
             passCounter = 0;
         }
-        phase++;
-    } else if (phase == 2) {
+        turnPhase++;
+    } else if (turnPhase == 2) {
         // TURN PHASE II : selecting and placing cards on table
         if (players[turnIndex] instanceof HumanPlayer) {
             console.log("=> PAUSED FOR HUMAN'S TURN");
@@ -128,18 +156,29 @@ function onTurn() {
             players[turnIndex].selectCards();
             table.refreshCards();
             playType = table.playCards();
-            table.showTurnMarker();
         } 
-        phase++;
+        turnPhase++;
     } else {
         // TURN PHASE III : processing played cards
         processCards();
-        phase = 1;
+        turnPhase = 1;
     }
 }
 
 function onGameEvent(e:createjs.Event):void {
     switch (e.type) {
+        case "showIntroScreen":
+            // temporarily set the table with 4 players for intro screen
+            table.setup(humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3);
+            table.dealCards();
+            screenManager.showIntro();
+            break;
+        case "startGameFor3":
+            playerTotalCount = 3;
+        case "startGameFor4":
+            playerTotalCount = 4;
+            startGame();
+            break;
         case "cardsSelected":
             console.log("=> HUMAN'S TURN");
             players[turnIndex].selectCards();
@@ -147,7 +186,7 @@ function onGameEvent(e:createjs.Event):void {
             playType = table.playCards();
             table.showTurnMarker();
             processCards();
-            phase = 1;
+            turnPhase = 1;
             // start up turn timer again since was paused for human to take turn
             if (roundOn) {
                 console.log("=> UNPAUSING FOR HUMAN");
@@ -159,66 +198,41 @@ function onGameEvent(e:createjs.Event):void {
             // window.clearInterval(turnTimer);
             // turnTimer = window.setInterval(onTurn, TURN_DELAY/2);           
             break;
-        case "roundOver":
+        case "showSummaryScreen":
             roundOn = false;
             window.clearInterval(turnTimer);
-            table.showLoser();
-            // sort players in order of status for next game / summary screen
-            players.sort((a:Player, b:Player) => {
-                if (a.status > b.status) return -1;
-                else if (a.status < b.status) return 1;
-                else return 0;
-            });
-            // update score for each player
-            players.forEach(player => player.updateScore());
-            humanPlayer.disableMe();
+            gameOn = table.roundWrapup();
             table.hideMe();
-            screenManager.showSummary(players);
+            screenManager.showSummary(players, gameOn);
             break;
-        case "roundCardSwap":
+        case "showSwapScreen":
             console.log("CARD SWAP");
-            console.table(deck);
-            console.log("human state: " + humanPlayer.state);
-
+            
+            table.reset();
             table.dealCards();
-            table.showMe();
-
-            // ?????????? perhaps not do this but hide all turn markers?
-            // find human player and set table to display turn marker
-            turnIndex = players.findIndex(player => player instanceof HumanPlayer);
-            table.currentPlayer = players[turnIndex];
-            table.showTurnMarker();
-
-
-            // humanPlayer.enableMe();
-            screenManager.showCardSwap();
-
-
-
-        
-            break;
-        case "roundStart":
-            console.log("NEW ROUND");
-
-            passCounter = 0;
-            turnIndex = 0;
-            table.currentPlayer = players[turnIndex];
-            phase = 1;
-            roundOn = true;            
-            playType = Player.PLAYED_NONE;
-            table.dealCards();
-
-            // start the turn timer if not currently human's turn
-            if (players[turnIndex] instanceof HumanPlayer) {
-                onTurn();
-                humanPlayer.enableMe();
-            } else {
-                turnTimer = window.setInterval(onTurn, TURN_DELAY);
-                humanPlayer.disableMe();
+            if (table.swapCards()) {
+                // human is pres or vice-pres - card selection required
+                humanPlayer.startSwapSelection();            
+                // show turn marker on human player
+                table.currentPlayer = humanPlayer;            
+                table.showTurnMarker();
             }
+            screenManager.showCardSwap(humanPlayer);
+            break;
+        case "startAnotherRound":
+            console.log("NEW ROUND");                
+            console.log("Cards to get rid of:");
+            console.log(humanPlayer.selectedCards);
+
+            // unload cards from human to computer player of lower status if required
+            table.unloadHumanCards();
+
+            startRound();
             break;
         case "gameOver":
-                
+            table.hideTurnMarker();
+            let winner:Player = players.find(player => player.score >= WIN_SCORE);
+            screenManager.showGameOver(winner);
             break;
     }
 }
@@ -232,12 +246,12 @@ function onReady(e:createjs.Event):void {
     table = new Table(stage, assetManager);
     // construct deck of Cards
     deck = [];
-    // for (let n:number=2; n<=14; n++) {
-    for (let n:number=2; n<=10; n++) {
+    for (let n:number=2; n<=14; n++) {
+    // for (let n:number=2; n<=13; n++) {
         deck.push(new Card(stage, assetManager, table, "C",n));
-        // deck.push(new Card(stage, assetManager, table, "H",n));
-        // deck.push(new Card(stage, assetManager, table, "D",n));
-        // deck.push(new Card(stage, assetManager, table, "S",n));
+        deck.push(new Card(stage, assetManager, table, "H",n));
+        deck.push(new Card(stage, assetManager, table, "D",n));
+        deck.push(new Card(stage, assetManager, table, "S",n));
     }
     // construct human player
     humanPlayer = new HumanPlayer("You", stage, assetManager, deck, table);
@@ -247,17 +261,18 @@ function onReady(e:createjs.Event):void {
     computerPlayer3 = new ComputerPlayer("Clyde", stage, assetManager, deck, humanPlayer, table);
     
     // listen for custom game events
-    stage.on("roundOver", onGameEvent);
-    stage.on("roundStart", onGameEvent);
-    stage.on("roundCardSwap", onGameEvent);
+    stage.on("showIntroScreen", onGameEvent);
+    stage.on("startGameFor3", onGameEvent);
+    stage.on("startGameFor4", onGameEvent);
+    stage.on("showSummaryScreen", onGameEvent);
+    stage.on("showSwapScreen", onGameEvent);
+    stage.on("startAnotherRound", onGameEvent);
     stage.on("gameOver", onGameEvent);
     stage.on("humanOut", onGameEvent);
     stage.on("cardsSelected", onGameEvent);
-    
-    // ??????????????
-    startGame();
-    // startRound();
-    // ??????????????
+
+    // kick off game with showing intro screen
+    stage.dispatchEvent(new createjs.Event("showIntroScreen", true, false));
     
     // startup the ticker
     createjs.Ticker.framerate = FRAME_RATE;

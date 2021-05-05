@@ -2,31 +2,31 @@ import Card from "./Card";
 import Table from "./Table";
 import { randomMe } from "./Toolkit";
 import AssetManager from "./AssetManager";
-import HumanPlayer from "./HumanPlayer";
 
 export default abstract class Player {
     // state class constants
+    public static STATE_NOT_PLAYING:number = 0;
     public static STATE_CARDS_SELECTED:number = 1;
     public static STATE_CARDS_NOT_SELECTED:number = 2;
-    public static STATE_NOT_PLAYING:number = 3;
-    public static STATE_DISABLED:number = 4;
-    public static STATE_OUT:number = 5;
+    public static STATE_DISABLED:number = 3;
+    public static STATE_OUT:number = 4;
+    public static STATE_CARD_SWAPPING:number = 5;
+    
+    public static ORIENTATION_BOTTOM:number = 1;
+    public static ORIENTATION_LEFT:number = 2;
+    public static ORIENTATION_TOP:number = 3;
+    public static ORIENTATION_RIGHT:number = 4;
 
-    public static ORIENTATION_LEFT:number = 1;
-    public static ORIENTATION_TOP:number = 2;
-    public static ORIENTATION_RIGHT:number = 3;
-    public static ORIENTATION_BOTTOM:number = 4;
-
-    public static STATUS_PRESIDENT:number = 2
-    public static STATUS_VICE_PRESIDENT:number = 1;
-    public static STATUS_NEUTRAL:number = 0;
-    public static STATUS_VICE_ASSHOLE:number = -1;
-    public static STATUS_ASSHOLE:number = -2;
-
-    public static PLAYED_PASS:number = 0
+    public static PLAYED_PASS:number = 0;
     public static PLAYED_TWO:number = 1;
     public static PLAYED_CARD:number = 2;
     public static PLAYED_NONE:number = 3;
+
+    public static STATUS_PRES:number = 2;
+    public static STATUS_VICE_PRES:number = 1;
+    public static STATUS_NEUTRAL:number = 0;
+    public static STATUS_VICE_AHOLE:number = -1;
+    public static STATUS_AHOLE:number = -2;
 
     protected stage:createjs.StageGL;
     protected deck:Card[];
@@ -42,15 +42,14 @@ export default abstract class Player {
     protected _status:number;
 
     constructor(name:string, stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], table:Table) {
-        this.reset();
         this._name = name;
         this._score = 0;
         this.stage = stage;
         this.deck = deck;
         this.table = table;
-        this._state = Player.STATE_NOT_PLAYING;
-        this._status = Player.STATUS_NEUTRAL;
+        this._hand = [];
         this._orientation = Player.ORIENTATION_BOTTOM;
+        this.hardReset();
     }
 
     // -------------------------------------------------- gets/sets
@@ -105,9 +104,11 @@ export default abstract class Player {
         // deal a single card to the player (remove it from the deck)
         let index:number = randomMe(0, this.deck.length - 1);
         this._hand.push(this.deck[index]);
+        
         // reset card from possible previous game
-        this.deck[index].reset();
-        this.deck.splice(index,1);	
+        // this.deck[index].reset();
+
+        this.deck.splice(index,1);
 
         // player is now playing!
         if (this._state != Player.STATE_DISABLED) this._state = Player.STATE_CARDS_NOT_SELECTED;
@@ -119,8 +120,8 @@ export default abstract class Player {
         this._hand.forEach(card => card.showFaceUp());
     }
 
-    public returnCards(deck:Card[]):void {
-        for (let card of this._hand) deck.push(card);
+    public returnCards():void {
+        this._hand.forEach(card => this.deck.push(card));
         this._hand = [];
     }
 
@@ -145,15 +146,21 @@ export default abstract class Player {
         if (this._score < 0) this._score = 0;
     }
 
-    public reset(hard:boolean = false):void {
-        this._state = Player.STATE_CARDS_NOT_SELECTED;
-        if (hard) {
-            this._score = 0;
-            this._state = Player.STATE_NOT_PLAYING;    
-        }
+    public softReset(hard:boolean = false):void {
+        this._state = Player.STATE_CARDS_NOT_SELECTED;        
         this._status = Player.STATUS_NEUTRAL;
-        this._hand = [];
-        this._selectedCards = [];
+        this._selectedCards = []; 
+        // clear out markers on all cards from previous round
+        this._hand.forEach(card => card.hideAllMarkers());
+    }
+
+    public hardReset():void {
+        this.softReset();
+        this.returnCards();
+        this._hand = [];         
+        this._score = 0;
+        this._state = Player.STATE_NOT_PLAYING; 
+        this._orientation = Player.ORIENTATION_BOTTOM;   
     }
 
 }

@@ -9,6 +9,10 @@ export default class Card {
     public static STATE_FACEDOWN:number = 4;
     public static STATE_PLAYED:number = 5;
 
+    public static SWAP_MARKER_NONE:number = 0;
+    public static SWAP_MARKER_ADD:number = 1;
+    public static SWAP_MARKER_REMOVE:number = 2;
+
     private eventSelected:createjs.Event;
     private eventDeselected:createjs.Event;
 
@@ -19,7 +23,9 @@ export default class Card {
 
     private stage:createjs.StageGL;
     private sprite:createjs.Sprite;
-    private turnMarker:createjs.Sprite;
+    private turnMarkerSprite:createjs.Sprite;
+    private addMarkerSprite:createjs.Sprite;
+    private removeMarkerSprite:createjs.Sprite;
     private table:Table;
     private upFrame:string;
     private overFrame:string;
@@ -38,7 +44,9 @@ export default class Card {
         this.faceDownFrame = "cards/facedown";
 
         this.sprite = assetManager.getSprite("sprites", this.upFrame, 0, 0);
-        this.turnMarker = assetManager.getSprite("sprites", "cards/turnMarker", 0, 0);
+        this.turnMarkerSprite = assetManager.getSprite("sprites", "cards/turnMarker", 0, 0);
+        this.addMarkerSprite = assetManager.getSprite("sprites", "icons/add", 0, 0);
+        this.removeMarkerSprite = assetManager.getSprite("sprites", "icons/remove", 0, 0);
 
         this.sprite.on("mouseover", this.onOver, this);
         this.sprite.on("mouseout", this.onOut, this);
@@ -82,6 +90,12 @@ export default class Card {
     public positionMe(x:number, y:number):void {
         this.sprite.x = x;
         this.sprite.y = y;
+        this.addMarkerSprite.x = this.sprite.x;
+        this.addMarkerSprite.y = this.sprite.y - 46;
+        this.removeMarkerSprite.x = this.sprite.x;
+        this.removeMarkerSprite.y = this.sprite.y - 46;
+        this.turnMarkerSprite.x = this.sprite.x;
+        this.turnMarkerSprite.y = this.sprite.y;
     }
 
     public showFaceUp():void {
@@ -95,18 +109,33 @@ export default class Card {
     }
 
     public showTurnMarker():void {
-        this.turnMarker.x = this.sprite.x;
-        this.turnMarker.y = this.sprite.y;
-        this.stage.addChildAt(this.turnMarker, 1);
+        this.stage.addChildAt(this.turnMarkerSprite, 1);
     }
 
     public hideTurnMarker():void {
-        this.stage.removeChild(this.turnMarker);
+        this.stage.removeChild(this.turnMarkerSprite);
+    }
+
+    public showAddMarker():void {
+        this.stage.addChild(this.addMarkerSprite);
+    }
+
+    public showRemoveMarker():void {
+        this.stage.addChild(this.removeMarkerSprite);
+    }
+
+    public hideRemoveMarker():void {
+        this.stage.removeChild(this.removeMarkerSprite);
+    }
+
+    public hideAllMarkers():void {
+        this.stage.removeChild(this.addMarkerSprite);
+        this.hideRemoveMarker();
     }
 
     public rotateMe(degree:number):void {
         this.sprite.rotation = degree;
-        this.turnMarker.rotation = degree;
+        this.turnMarkerSprite.rotation = degree;
     }
 
     public playMe():void {
@@ -132,9 +161,9 @@ export default class Card {
 
     public reset():void {
         this._state = Card.STATE_ENABLED;
-        this.hideMe();
-
-
+        // this.hideMe();
+        this.hideTurnMarker();
+        this.hideAllMarkers();
     }
 
 }
