@@ -8,14 +8,17 @@ export default class ScreenManager {
     // private eventResetGame:createjs.Event;
 
     private assetManager:AssetManager;
-    // private introScreen:createjs.Container;
-    // private gameOverScreen:createjs.Container;
-    private txtScores:createjs.BitmapText[];
+    private introScreen:createjs.Container;
     private summaryScreen:createjs.Container;
+    private txtScores:createjs.BitmapText[];
+    private swapScreen:createjs.Container;
     private cursor:createjs.Sprite;
     private stage:createjs.StageGL;
 
-    private eventCardSwap:createjs.Event;
+    private eventShowSwapScreen:createjs.Event;
+    private eventStartAnotherRound:createjs.Event;
+    private eventStartGameFor3:createjs.Event;
+    private eventStartGameFor4:createjs.Event;
 
     constructor(stage:createjs.StageGL, assetManager:AssetManager) {
         this.stage = stage;
@@ -27,10 +30,22 @@ export default class ScreenManager {
         background.scaleY = STAGE_HEIGHT;
         stage.addChild(background);  
 
-        // // using containers to contain several displayobjects for easy adding / removing from stage
-        // this.introScreen = new createjs.Container(); 
-        // this.introScreen.addChild(assetManager.getSprite("sprites","misc/backgroundIntro",0,0));
-        // this.introScreen.addChild(bugSprite);
+        // intro screen initialization
+        this.introScreen = new createjs.Container(); 
+        this.introScreen.x = 123;
+        this.introScreen.y = 140;        
+        let btnThreePlayers:createjs.Sprite = this.assetManager.getSprite("sprites","cards/turnMarker",0,0);
+        btnThreePlayers.on("mouseover", this.onOver, this);
+        btnThreePlayers.on("mouseout", this.onOut, this);
+        let btnFourPlayers:createjs.Sprite = this.assetManager.getSprite("sprites","cards/turnMarker",200,0);
+        btnFourPlayers.on("mouseover", this.onOver, this);
+        btnFourPlayers.on("mouseout", this.onOut, this);
+        this.introScreen.addChild(btnThreePlayers);
+        this.introScreen.addChild(btnFourPlayers);
+        btnThreePlayers.on("click", (e:createjs.Event) => this.closeScreen(this.eventStartGameFor3), this);
+        btnFourPlayers.on("click", (e:createjs.Event) => this.closeScreen(this.eventStartGameFor4), this);
+
+
 
         // summary screen initialization
         this.cursor = assetManager.getSprite("sprites", "cursors/checkmark", 0, 0);
@@ -48,28 +63,35 @@ export default class ScreenManager {
         }
         this.summaryScreen.on("mouseover", this.onOver, this);
         this.summaryScreen.on("mouseout", this.onOut, this);
+        this.summaryScreen.on("click", (e:createjs.Event) => this.closeScreen(this.eventShowSwapScreen), this);
+
+        // card swap screen initialization
+        this.swapScreen = new createjs.Container();
+        this.swapScreen.x = 123;
+        this.swapScreen.y = 140;
+        // ???????? change this to new graphics
+        this.swapScreen.addChild(this.assetManager.getSprite("sprites","screens/summary",0,0));
+        // ??????????????
+        this.swapScreen.on("mouseover", this.onOver, this);
+        this.swapScreen.on("mouseout", this.onOut, this);
+        this.swapScreen.on("click", (e:createjs.Event) => this.closeScreen(this.eventStartAnotherRound), this);
 
         // this.gameOverScreen = new createjs.Container();
         // this.gameOverScreen.addChild(assetManager.getSprite("sprites","misc/backgroundGame",0,0));
         // let gameOverSprite:createjs.Sprite = assetManager.getSprite("sprites","misc/gameOver",70,240);
         // this.gameOverScreen.addChild(gameOverSprite);
 
-        // this.gameScreen = assetManager.getSprite("sprites","misc/backgroundGame",0,0);
-
         // construct custom event objects
-        this.eventCardSwap = new createjs.Event("roundCardSwap", true, false);
-        // this.eventResetGame = new createjs.Event("gameReset", true, false);
+        this.eventShowSwapScreen = new createjs.Event("showSwapScreen", true, false);
+        this.eventStartAnotherRound = new createjs.Event("startAnotherRound", true, false);
+        this.eventStartGameFor3 = new createjs.Event("startGameFor3", true, false);
+        this.eventStartGameFor4 = new createjs.Event("startGameFor4", true, false);
     }
 
     // -------------------------------------------------- public methods
     public showIntro():void {        
         this.hideAll();
-        // this.stage.addChildAt(this.introScreen,0);
-
-        // // wire up listener to detect click event once and dispatch custom event
-        // this.stage.on("click", (e) => {
-        //     this.stage.dispatchEvent(this.eventStartGame);
-        // }, this, true);        
+        this.stage.addChildAt(this.introScreen,1);
     }
 
     // public showGame():void {
@@ -112,18 +134,11 @@ export default class ScreenManager {
             dropY += 35;
         })
         this.stage.addChildAt(this.summaryScreen,1);
-
-        // wire up listener to detect click event once and dispatch custom event
-        this.summaryScreen.on("click", (e:createjs.Event) => {
-            this.summaryScreen.cursor = "default";
-            this.stage.removeChild(this.cursor);
-            this.stage.dispatchEvent(this.eventCardSwap);
-        }, this, true);
     }
 
     public showCardSwap():void {
         this.hideAll();
-
+        this.stage.addChildAt(this.swapScreen,1);
     }
 
     // --------------------------------------------------- public methods
@@ -135,7 +150,9 @@ export default class ScreenManager {
     // -------------------------------------------------- event handlers
     private onOver(e:createjs.Event):void {
         // hide real cursor
+        this.introScreen.cursor = "none";
         this.summaryScreen.cursor = "none";
+        this.swapScreen.cursor = "none";
         this.cursor.x = this.stage.mouseX;
         this.cursor.y = this.stage.mouseY;
         this.stage.addChild(this.cursor);
@@ -143,15 +160,27 @@ export default class ScreenManager {
 
     private onOut(e:createjs.Event):void {
         // reset cursor back to real cursor
+        this.introScreen.cursor = "default";
         this.summaryScreen.cursor = "default";
+        this.swapScreen.cursor = "default";
         this.stage.removeChild(this.cursor);
     }
 
     // -------------------------------------------------- private methods
+    private closeScreen(event:createjs.Event):void {
+        this.introScreen.cursor = "default";
+        this.summaryScreen.cursor = "default";
+        this.swapScreen.cursor = "default";        
+        this.stage.removeChild(this.cursor);
+        this.hideAll();
+        this.stage.dispatchEvent(event);        
+    }
+
     private hideAll():void {
         // before every screen change remove all screens from stage
+        this.stage.removeChild(this.introScreen);
         this.stage.removeChild(this.summaryScreen);
-        // this.stage.removeChild(this.gameOverScreen);
+        this.stage.removeChild(this.swapScreen);
         // this.stage.removeChild(this.gameScreen);
     }
 }

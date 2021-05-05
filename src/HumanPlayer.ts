@@ -7,6 +7,7 @@ export default class HumanPlayer extends Player {
 
     private playSpot:createjs.Container;
     private cursor:createjs.Sprite;
+    private cardsRequiredToSwap:number;
     private eventCardsSelected:createjs.Event;
 
     constructor(name:string, stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], table:Table) {
@@ -31,7 +32,7 @@ export default class HumanPlayer extends Player {
    
     // --------------------------------------------------- public methods
     public update():void {
-        if (this._state == Player.STATE_DISABLED) return;
+        if ((this._state == Player.STATE_DISABLED) || (this._state == Player.STATE_OUT)) return;
         this.cursor.x = this.stage.mouseX;
         this.cursor.y = this.stage.mouseY;
     }    
@@ -48,12 +49,9 @@ export default class HumanPlayer extends Player {
         this._state = Player.STATE_DISABLED;
     }
 
-    public enableForCardSwap():void {
-        // how many low cards am I swapping?
-        console.log(this._status);
-        // ?????? only swap is this._status > 0 (vice/pres)
-
-
+    public startSwapSelection():void {
+        // number of cards is same as the status (2,1)
+        this.cardsRequiredToSwap = Math.abs(this._status);
         // enable all cards for picking ones to swap
         this._hand.forEach(card => card.enableMe());
         this._state = Player.STATE_CARD_SWAPPING;
@@ -61,7 +59,7 @@ export default class HumanPlayer extends Player {
 
     // --------------------------------------------------- event handlers
     private onClick():void {
-        if ((this._state == Player.STATE_DISABLED) || (this._state == Player.STATE_CARD_SWAPPING)) return;
+        if ((this._state == Player.STATE_DISABLED) || (this._state == Player.STATE_OUT)) return;
         if (this._state == Player.STATE_CARDS_SELECTED) {
             // human playing is playing cards - check if selected cards are valid?
             if (this.table.validateCards() == false) return;
@@ -77,7 +75,7 @@ export default class HumanPlayer extends Player {
     }
 
     private onOver(e:createjs.Event):void {
-        if ((this._state == Player.STATE_DISABLED) || (this._state == Player.STATE_CARD_SWAPPING)) return;
+        if ((this._state == Player.STATE_DISABLED) || (this._state == Player.STATE_OUT)) return;
         // hide real cursor
         this.playSpot.cursor = "none";
         // replace cursor with sprite
@@ -98,23 +96,38 @@ export default class HumanPlayer extends Player {
         this._selectedCards = [];
 
         if (this._state == Player.STATE_CARD_SWAPPING) {
+            // how many cards in the player's hand are selected?
+            let count:number = this._hand.filter(card => card.state == Card.STATE_SELECTED).length;
+
             switch (e.type) {
                 case "cardSelected":
-
+                    if (count >= this.cardsRequiredToSwap) {
+                        this._hand.forEach(card => {
+                            if (card.state != Card.STATE_SELECTED) card.disableMe();
+                        });  
+                    }
                     break;
                 case "cardDeselected":
-
+                    // how many cards are selected?
+                    if (count < this.cardsRequiredToSwap) {
+                        this._hand.forEach(card => {
+                            if (card.state != Card.STATE_SELECTED) {
+                                card.enableMe();
+                            }
+                        });
+                    }
                     break;
             }
 
-            // regardless of outcome above - update selectedCards array
             this._hand.forEach(card => {
+                // regardless of outcome above - update selectedCards array
                 if (card.state == Card.STATE_SELECTED) this._selectedCards.push(card);
+                // show/hide remove marker of cards when selected
+                if (card.state == Card.STATE_SELECTED) card.showRemoveMarker();
+                else if (card.state == Card.STATE_ENABLED) card.hideRemoveMarker();
             });
 
         } else {
-
-            
             switch (e.type) {
                 case "cardSelected":
                     // what is the rank of the selected card?
@@ -141,7 +154,6 @@ export default class HumanPlayer extends Player {
             if (this._selectedCards.length > 0) this._state = Player.STATE_CARDS_SELECTED;
             else this._state = Player.STATE_CARDS_NOT_SELECTED;
         }  
-        
 
     }
 }

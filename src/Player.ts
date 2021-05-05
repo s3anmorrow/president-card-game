@@ -22,6 +22,12 @@ export default abstract class Player {
     public static PLAYED_CARD:number = 2;
     public static PLAYED_NONE:number = 3;
 
+    public static STATUS_PRES:number = 2;
+    public static STATUS_VICE_PRES:number = 1;
+    public static STATUS_NEUTRAL:number = 0;
+    public static STATUS_VICE_AHOLE:number = -1;
+    public static STATUS_AHOLE:number = -2;
+
     protected stage:createjs.StageGL;
     protected deck:Card[];
     protected table:Table;
@@ -36,15 +42,14 @@ export default abstract class Player {
     protected _status:number;
 
     constructor(name:string, stage:createjs.StageGL, assetManager:AssetManager, deck:Card[], table:Table) {
-        this.reset();
         this._name = name;
         this._score = 0;
         this.stage = stage;
         this.deck = deck;
         this.table = table;
-        this._state = Player.STATE_NOT_PLAYING;
-        this._status = 0;
+        this._hand = [];
         this._orientation = Player.ORIENTATION_BOTTOM;
+        this.hardReset();
     }
 
     // -------------------------------------------------- gets/sets
@@ -99,9 +104,11 @@ export default abstract class Player {
         // deal a single card to the player (remove it from the deck)
         let index:number = randomMe(0, this.deck.length - 1);
         this._hand.push(this.deck[index]);
+        
         // reset card from possible previous game
-        this.deck[index].reset();
-        this.deck.splice(index,1);	
+        // this.deck[index].reset();
+
+        this.deck.splice(index,1);
 
         // player is now playing!
         if (this._state != Player.STATE_DISABLED) this._state = Player.STATE_CARDS_NOT_SELECTED;
@@ -113,8 +120,8 @@ export default abstract class Player {
         this._hand.forEach(card => card.showFaceUp());
     }
 
-    public returnCards(deck:Card[]):void {
-        for (let card of this._hand) deck.push(card);
+    public returnCards():void {
+        this._hand.forEach(card => this.deck.push(card));
         this._hand = [];
     }
 
@@ -139,15 +146,19 @@ export default abstract class Player {
         if (this._score < 0) this._score = 0;
     }
 
-    public reset(hard:boolean = false):void {
-        this._state = Player.STATE_CARDS_NOT_SELECTED;
-        if (hard) {
-            this._score = 0;
-            this._state = Player.STATE_NOT_PLAYING;    
-        }
-        this._status = 0;
-        this._hand = [];
+    public softReset(hard:boolean = false):void {
+        this._state = Player.STATE_CARDS_NOT_SELECTED;        
+        this._status = Player.STATUS_NEUTRAL;
         this._selectedCards = [];
+        this.returnCards();
+        this._hand = [];        
+    }
+
+    public hardReset():void {
+        this.softReset();
+        this._score = 0;
+        this._state = Player.STATE_NOT_PLAYING; 
+        this._orientation = Player.ORIENTATION_BOTTOM;   
     }
 
 }
