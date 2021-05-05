@@ -6,6 +6,7 @@ export const PLAYER_CARD_SPREAD:number = 33;
 export const COMPUTER_CARD_SPREAD:number = 20;
 // export const TURN_DELAY:number = 200;
 export const TURN_DELAY:number = 200;
+export const WIN_SCORE:number = 2;
 
 export const ASSET_MANIFEST:Object[] = [
     {

@@ -4,10 +4,6 @@ import HumanPlayer from "./HumanPlayer";
 import { STAGE_WIDTH, STAGE_HEIGHT } from "./Constants";
 
 export default class ScreenManager {
-    // custom event for dispatching
-    // private eventStartGame:createjs.Event;
-    // private eventResetGame:createjs.Event;
-
     public static STATE_INTRO:number = 0;
     public static STATE_GAME:number = 1;
     public static STATE_SUMMARY:number = 2;
@@ -24,13 +20,18 @@ export default class ScreenManager {
     private humanPlayer:HumanPlayer;
     private selectionCount:number;
     private gameScreen:createjs.Container;
+    private gameOverScreen:createjs.Container;
+    private winnerPrompt:createjs.Sprite;
+    private txtRounds:createjs.BitmapText;
     private stage:createjs.StageGL;
     private state:number;
 
+    private eventShowIntroScreen:createjs.Event;
     private eventShowSwapScreen:createjs.Event;
     private eventStartAnotherRound:createjs.Event;
     private eventStartGameFor3:createjs.Event;
     private eventStartGameFor4:createjs.Event;
+    private eventGameOver:createjs.Event;
 
     constructor(stage:createjs.StageGL, assetManager:AssetManager) {
         this.selectionCount = 0;
@@ -84,7 +85,6 @@ export default class ScreenManager {
         }
         this.summaryScreen.on("mouseover", this.onOver, this);
         this.summaryScreen.on("mouseout", this.onOut, this);
-        this.summaryScreen.on("click", (e:createjs.Event) => this.closeScreen(this.eventShowSwapScreen), this);
 
         // card swap screen initialization
         this.swapScreen = new createjs.Container();
@@ -96,16 +96,30 @@ export default class ScreenManager {
         this.swapScreen.on("mouseout", this.onOut, this);
         this.swapScreen.on("click", this.onSwapSelection, this);
 
-        // this.gameOverScreen = new createjs.Container();
-        // this.gameOverScreen.addChild(assetManager.getSprite("sprites","misc/backgroundGame",0,0));
-        // let gameOverSprite:createjs.Sprite = assetManager.getSprite("sprites","misc/gameOver",70,240);
-        // this.gameOverScreen.addChild(gameOverSprite);
+        // game over screen initialization
+        this.gameOverScreen = new createjs.Container();
+        this.gameOverScreen.x = 150;
+        this.gameOverScreen.y = 140;   
+        this.gameOverScreen.addChild(assetManager.getSprite("sprites","screens/gameOver",0,0));
+        this.winnerPrompt = assetManager.getSprite("sprites","screens/gameOverYou",22,80);
+        this.gameOverScreen.addChild(this.winnerPrompt);
+        this.txtRounds = new createjs.BitmapText("0", assetManager.getSpriteSheet("glyphs"));
+        this.txtRounds.x = 380;
+        this.txtRounds.y = 130;
+        this.gameOverScreen.addChild(this.txtRounds);
+        let btnMenu:createjs.Sprite = assetManager.getSprite("sprites","screens/btnMenu",30,190);
+        btnMenu.on("mouseover", this.onOver, this);
+        btnMenu.on("mouseout", this.onOut, this);
+        btnMenu.on("click", (e:createjs.Event) => this.closeScreen(this.eventShowIntroScreen), this);
+        this.gameOverScreen.addChild(btnMenu);
 
         // construct custom event objects
         this.eventShowSwapScreen = new createjs.Event("showSwapScreen", true, false);
         this.eventStartAnotherRound = new createjs.Event("startAnotherRound", true, false);
         this.eventStartGameFor3 = new createjs.Event("startGameFor3", true, false);
         this.eventStartGameFor4 = new createjs.Event("startGameFor4", true, false);
+        this.eventGameOver = new createjs.Event("gameOver", true, false);
+        this.eventShowIntroScreen = new createjs.Event("showIntroScreen", true, false);
     }
 
     // -------------------------------------------------- public methods
@@ -121,7 +135,7 @@ export default class ScreenManager {
         this.stage.addChildAt(this.gameScreen, 1);
     }
 
-    public showSummary(players:Player[]):void {
+    public showSummary(players:Player[], gameOn:boolean = true):void {
         this.state = ScreenManager.STATE_SUMMARY;
         this.hideAll();
         let dropY:number = 115;
@@ -147,6 +161,10 @@ export default class ScreenManager {
             dropY += 35;
         })
         this.stage.addChildAt(this.summaryScreen,1);
+
+        // wire up event listener according to whether game is on or not after summary screen
+        if (gameOn) this.summaryScreen.on("click", (e:createjs.Event) => this.closeScreen(this.eventShowSwapScreen), this, true);
+        else this.summaryScreen.on("click", (e:createjs.Event) => this.closeScreen(this.eventGameOver), this, true);
     }
 
     public showCardSwap(humanPlayer:HumanPlayer):void {
@@ -170,6 +188,14 @@ export default class ScreenManager {
         this.stage.addChildAt(this.swapScreen, 1);
     }
 
+    public showGameOver(winner:Player):void {
+        this.state = ScreenManager.STATE_GAME_OVER;
+        this.hideAll();
+        this.winnerPrompt.gotoAndStop("screens/gameOver" + winner.name);
+        this.txtRounds.text = "123";
+        this.stage.addChildAt(this.gameOverScreen, 1);
+    }
+
     // --------------------------------------------------- public methods
     public update():void {
         this.cursor.x = this.stage.mouseX;
@@ -186,7 +212,6 @@ export default class ScreenManager {
 
             // ????????????
             console.log("DENIED!");
-
 
         } else {
             this.closeScreen(this.eventStartAnotherRound);
@@ -229,6 +254,5 @@ export default class ScreenManager {
         this.stage.removeChild(this.summaryScreen);
         this.stage.removeChild(this.swapScreen);
         this.stage.removeChild(this.gameScreen);
-        // this.stage.removeChild(this.gameScreen);
     }
 }

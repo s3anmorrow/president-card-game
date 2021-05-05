@@ -3,7 +3,7 @@ import Card from "./Card";
 import HumanPlayer from "./HumanPlayer";
 import ComputerPlayer from "./ComputerPlayer";
 import Player from "./Player";
-import { PLAYER_CARD_SPREAD, COMPUTER_CARD_SPREAD, STAGE_WIDTH, STAGE_HEIGHT } from "./Constants";
+import { PLAYER_CARD_SPREAD, COMPUTER_CARD_SPREAD, STAGE_WIDTH, STAGE_HEIGHT, WIN_SCORE } from "./Constants";
 
 export default class Table {
     private stage:createjs.StageGL;
@@ -104,17 +104,6 @@ export default class Table {
     public hidePass():void {
         this._playSpot.removeChild(this.passIndicator);
     }   
-    
-    public showLoser():void {
-        // find which player is loser and turn cards face up
-        let loser:Player = this._players.find(player => player.state != Player.STATE_OUT);
-        // highlight the loser on table
-        this.currentPlayer = loser;
-        this.showTurnMarker();
-        // reveal its cards
-        loser.revealCards();
-        loser.status = this.statusRankings[this.statusCounter];
-    }
 
     public hideMe():void {
         this.stage.removeChild(this.playSpot);
@@ -200,17 +189,13 @@ export default class Table {
             } else if (receiver.status == Player.STATUS_VICE_AHOLE) {
                 // vice-ahole - find vice-pres and get worst card - only if vice-pres is a computer
                 donor = this._players.find(player => player.status == Player.STATUS_VICE_PRES);
-                if (donor instanceof ComputerPlayer) {                   
-                    cardsToSwap = donor.hand.filter(card => card.rank >= 3).splice(0, 1);
-                    selectionReq = true;
-                }
+                if (donor instanceof ComputerPlayer) cardsToSwap = donor.hand.filter(card => card.rank >= 3).splice(0, 1);
+                else selectionReq = true;
             } else if (receiver.status == Player.STATUS_AHOLE) {
                 // ahole - find president and get his worst 2 cards - only do swap if prez is a computer
                 donor = this._players.find(player => player.status == Player.STATUS_PRES);
-                if (donor instanceof ComputerPlayer) {                    
-                    cardsToSwap = donor.hand.filter(card => card.rank >= 3).splice(0, 2);
-                    selectionReq = true;
-                }
+                if (donor instanceof ComputerPlayer) cardsToSwap = donor.hand.filter(card => card.rank >= 3).splice(0, 2);
+                else selectionReq = true;
             }
 
             cardsToSwap.forEach(card => {
@@ -283,7 +268,16 @@ export default class Table {
         return playType;
     }
 
-    public shufflePlayers():void {
+    public roundWrapup():boolean {
+        // find which player is loser and turn cards face up
+        let loser:Player = this._players.find(player => player.state != Player.STATE_OUT);
+        // highlight the loser on table
+        this.currentPlayer = loser;
+        this.showTurnMarker();
+        // reveal his cards
+        loser.revealCards();
+        loser.status = this.statusRankings[this.statusCounter];
+        
         // sort players in order of status for next round
         this._players.sort((a:Player, b:Player) => {
             if (a.status > b.status) return -1;
@@ -303,6 +297,9 @@ export default class Table {
 
         // update score for each player according to status
         this._players.forEach(player => player.updateScore());
+        // has a player won?
+        if (this._players.some(player => player.score >= WIN_SCORE)) return false;
+        return true;
     }
 
     public validateCards():boolean {

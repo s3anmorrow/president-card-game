@@ -3,7 +3,7 @@
 // importing createjs framework
 import "createjs";
 // importing game constants
-import { STAGE_WIDTH, STAGE_HEIGHT, FRAME_RATE, ASSET_MANIFEST, TURN_DELAY } from "./Constants";
+import { STAGE_WIDTH, STAGE_HEIGHT, FRAME_RATE, ASSET_MANIFEST, TURN_DELAY, WIN_SCORE } from "./Constants";
 import AssetManager from "./AssetManager";
 import ScreenManager from "./ScreenManager";
 import Card from "./Card";
@@ -35,9 +35,12 @@ let turnPhase:number;
 let playType:number;
 let passCounter:number;
 let roundOn:boolean;
+let gameOn:boolean;
 
 // --------------------------------------------------- private methods
 function startGame():void {
+    gameOn = true;
+
     // hard reset all possible players for new game (despite whether will be in game or not)
     humanPlayer.hardReset();
     computerPlayer1.hardReset();
@@ -191,10 +194,9 @@ function onGameEvent(e:createjs.Event):void {
         case "showSummaryScreen":
             roundOn = false;
             window.clearInterval(turnTimer);
-            table.showLoser();
-            table.shufflePlayers();
+            gameOn = table.roundWrapup();
             table.hideMe();
-            screenManager.showSummary(players);
+            screenManager.showSummary(players, gameOn);
             break;
         case "showSwapScreen":
             console.log("CARD SWAP");
@@ -215,6 +217,10 @@ function onGameEvent(e:createjs.Event):void {
             // TODO handle when humanplayer is neutral (3 players)
             // TODO add names to players on table
             // TODO points system to end the game
+            // TODO speed up game when human is out
+            // TODO random player to start when new game
+            // TODO remove all the player[turnIndex] in Game.ts
+            // TODO add squares to corner of stage
             
         case "startAnotherRound":
             console.log("NEW ROUND");                
@@ -227,6 +233,11 @@ function onGameEvent(e:createjs.Event):void {
             startRound();
             break;
         case "gameOver":
+
+            console.log("GAME. IS. OVER.");
+
+            let winner:Player = players.find(player => player.score >= WIN_SCORE);
+            screenManager.showGameOver(winner);
                 
             break;
     }

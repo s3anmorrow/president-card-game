@@ -421,6 +421,7 @@
                 <false/>
             </struct>
             <key type="filename">screens/btnFourPlayers.png</key>
+            <key type="filename">screens/btnMenu.png</key>
             <key type="filename">screens/btnThreePlayers.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
@@ -433,6 +434,39 @@
                 <rect>111,12,223,23</rect>
                 <key>scale9Paddings</key>
                 <rect>111,12,223,23</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">screens/gameOver.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0,0</point_f>
+                <key>spriteScale</key>
+                <double>1</double>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>126,36,251,72</rect>
+                <key>scale9Paddings</key>
+                <rect>126,36,251,72</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">screens/gameOverClyde.png</key>
+            <key type="filename">screens/gameOverJanky.png</key>
+            <key type="filename">screens/gameOverShifty.png</key>
+            <key type="filename">screens/gameOverYou.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0,0</point_f>
+                <key>spriteScale</key>
+                <double>1</double>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>113,4,225,8</rect>
+                <key>scale9Paddings</key>
+                <rect>113,4,225,8</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>

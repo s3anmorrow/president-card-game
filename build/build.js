@@ -10430,13 +10430,14 @@ exports.default = ComputerPlayer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ASSET_MANIFEST = exports.TURN_DELAY = exports.COMPUTER_CARD_SPREAD = exports.PLAYER_CARD_SPREAD = exports.FRAME_RATE = exports.STAGE_HEIGHT = exports.STAGE_WIDTH = void 0;
+exports.ASSET_MANIFEST = exports.WIN_SCORE = exports.TURN_DELAY = exports.COMPUTER_CARD_SPREAD = exports.PLAYER_CARD_SPREAD = exports.FRAME_RATE = exports.STAGE_HEIGHT = exports.STAGE_WIDTH = void 0;
 exports.STAGE_WIDTH = 800;
 exports.STAGE_HEIGHT = 600;
 exports.FRAME_RATE = 30;
 exports.PLAYER_CARD_SPREAD = 33;
 exports.COMPUTER_CARD_SPREAD = 20;
 exports.TURN_DELAY = 200;
+exports.WIN_SCORE = 2;
 exports.ASSET_MANIFEST = [
     {
         type: "json",
@@ -10504,7 +10505,9 @@ let turnPhase;
 let playType;
 let passCounter;
 let roundOn;
+let gameOn;
 function startGame() {
+    gameOn = true;
     humanPlayer.hardReset();
     computerPlayer1.hardReset();
     computerPlayer2.hardReset();
@@ -10623,10 +10626,9 @@ function onGameEvent(e) {
         case "showSummaryScreen":
             roundOn = false;
             window.clearInterval(turnTimer);
-            table.showLoser();
-            table.shufflePlayers();
+            gameOn = table.roundWrapup();
             table.hideMe();
-            screenManager.showSummary(players);
+            screenManager.showSummary(players, gameOn);
             break;
         case "showSwapScreen":
             console.log("CARD SWAP");
@@ -10647,6 +10649,9 @@ function onGameEvent(e) {
             startRound();
             break;
         case "gameOver":
+            console.log("GAME. IS. OVER.");
+            let winner = players.find(player => player.score >= Constants_1.WIN_SCORE);
+            screenManager.showGameOver(winner);
             break;
     }
 }
@@ -11017,7 +11022,6 @@ class ScreenManager {
         }
         this.summaryScreen.on("mouseover", this.onOver, this);
         this.summaryScreen.on("mouseout", this.onOut, this);
-        this.summaryScreen.on("click", (e) => this.closeScreen(this.eventShowSwapScreen), this);
         this.swapScreen = new createjs.Container();
         this.swapScreen.x = 123;
         this.swapScreen.y = 140;
@@ -11026,10 +11030,27 @@ class ScreenManager {
         this.swapScreen.on("mouseover", this.onOver, this);
         this.swapScreen.on("mouseout", this.onOut, this);
         this.swapScreen.on("click", this.onSwapSelection, this);
+        this.gameOverScreen = new createjs.Container();
+        this.gameOverScreen.x = 150;
+        this.gameOverScreen.y = 140;
+        this.gameOverScreen.addChild(assetManager.getSprite("sprites", "screens/gameOver", 0, 0));
+        this.winnerPrompt = assetManager.getSprite("sprites", "screens/gameOverYou", 22, 80);
+        this.gameOverScreen.addChild(this.winnerPrompt);
+        this.txtRounds = new createjs.BitmapText("0", assetManager.getSpriteSheet("glyphs"));
+        this.txtRounds.x = 380;
+        this.txtRounds.y = 130;
+        this.gameOverScreen.addChild(this.txtRounds);
+        let btnMenu = assetManager.getSprite("sprites", "screens/btnMenu", 30, 190);
+        btnMenu.on("mouseover", this.onOver, this);
+        btnMenu.on("mouseout", this.onOut, this);
+        btnMenu.on("click", (e) => this.closeScreen(this.eventShowIntroScreen), this);
+        this.gameOverScreen.addChild(btnMenu);
         this.eventShowSwapScreen = new createjs.Event("showSwapScreen", true, false);
         this.eventStartAnotherRound = new createjs.Event("startAnotherRound", true, false);
         this.eventStartGameFor3 = new createjs.Event("startGameFor3", true, false);
         this.eventStartGameFor4 = new createjs.Event("startGameFor4", true, false);
+        this.eventGameOver = new createjs.Event("gameOver", true, false);
+        this.eventShowIntroScreen = new createjs.Event("showIntroScreen", true, false);
     }
     showIntro() {
         this.state = ScreenManager.STATE_INTRO;
@@ -11041,7 +11062,7 @@ class ScreenManager {
         this.hideAll();
         this.stage.addChildAt(this.gameScreen, 1);
     }
-    showSummary(players) {
+    showSummary(players, gameOn = true) {
         this.state = ScreenManager.STATE_SUMMARY;
         this.hideAll();
         let dropY = 115;
@@ -11066,6 +11087,10 @@ class ScreenManager {
             dropY += 35;
         });
         this.stage.addChildAt(this.summaryScreen, 1);
+        if (gameOn)
+            this.summaryScreen.on("click", (e) => this.closeScreen(this.eventShowSwapScreen), this, true);
+        else
+            this.summaryScreen.on("click", (e) => this.closeScreen(this.eventGameOver), this, true);
     }
     showCardSwap(humanPlayer) {
         this.state = ScreenManager.STATE_SWAP;
@@ -11086,6 +11111,13 @@ class ScreenManager {
         else if (humanPlayer.status == Player_1.default.STATUS_AHOLE)
             this.swapPrompt.gotoAndStop("screens/swapAhole");
         this.stage.addChildAt(this.swapScreen, 1);
+    }
+    showGameOver(winner) {
+        this.state = ScreenManager.STATE_GAME_OVER;
+        this.hideAll();
+        this.winnerPrompt.gotoAndStop("screens/gameOver" + winner.name);
+        this.txtRounds.text = "123";
+        this.stage.addChildAt(this.gameOverScreen, 1);
     }
     update() {
         this.cursor.x = this.stage.mouseX;
@@ -11225,13 +11257,6 @@ class Table {
     hidePass() {
         this._playSpot.removeChild(this.passIndicator);
     }
-    showLoser() {
-        let loser = this._players.find(player => player.state != Player_1.default.STATE_OUT);
-        this.currentPlayer = loser;
-        this.showTurnMarker();
-        loser.revealCards();
-        loser.status = this.statusRankings[this.statusCounter];
-    }
     hideMe() {
         this.stage.removeChild(this.playSpot);
     }
@@ -11297,17 +11322,17 @@ class Table {
             }
             else if (receiver.status == Player_1.default.STATUS_VICE_AHOLE) {
                 donor = this._players.find(player => player.status == Player_1.default.STATUS_VICE_PRES);
-                if (donor instanceof ComputerPlayer_1.default) {
+                if (donor instanceof ComputerPlayer_1.default)
                     cardsToSwap = donor.hand.filter(card => card.rank >= 3).splice(0, 1);
+                else
                     selectionReq = true;
-                }
             }
             else if (receiver.status == Player_1.default.STATUS_AHOLE) {
                 donor = this._players.find(player => player.status == Player_1.default.STATUS_PRES);
-                if (donor instanceof ComputerPlayer_1.default) {
+                if (donor instanceof ComputerPlayer_1.default)
                     cardsToSwap = donor.hand.filter(card => card.rank >= 3).splice(0, 2);
+                else
                     selectionReq = true;
-                }
             }
             cardsToSwap.forEach(card => {
                 donor.hand.splice(donor.hand.findIndex(myCard => myCard == card), 1);
@@ -11359,7 +11384,12 @@ class Table {
         }
         return playType;
     }
-    shufflePlayers() {
+    roundWrapup() {
+        let loser = this._players.find(player => player.state != Player_1.default.STATE_OUT);
+        this.currentPlayer = loser;
+        this.showTurnMarker();
+        loser.revealCards();
+        loser.status = this.statusRankings[this.statusCounter];
         this._players.sort((a, b) => {
             if (a.status > b.status)
                 return -1;
@@ -11379,6 +11409,9 @@ class Table {
                 index = 0;
         }
         this._players.forEach(player => player.updateScore());
+        if (this._players.some(player => player.score >= Constants_1.WIN_SCORE))
+            return false;
+        return true;
     }
     validateCards() {
         let selectedCards = this._currentPlayer.selectedCards;
