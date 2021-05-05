@@ -10641,15 +10641,12 @@ function onGameEvent(e) {
                 table.currentPlayer = humanPlayer;
                 table.showTurnMarker();
             }
-            screenManager.showCardSwap();
+            screenManager.showCardSwap(humanPlayer);
             break;
         case "startAnotherRound":
             console.log("NEW ROUND");
-            if (humanPlayer.selectedCards.length > 0) {
-                console.log("Cards to get rid of:");
-                console.log(humanPlayer.selectedCards);
-            }
-            startRound();
+            console.log("Cards to get rid of:");
+            console.log(humanPlayer.selectedCards);
             break;
         case "gameOver":
             break;
@@ -10976,15 +10973,19 @@ Player.STATUS_AHOLE = -2;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
+const Player_1 = __webpack_require__(/*! ./Player */ "./src/Player.ts");
 const Constants_1 = __webpack_require__(/*! ./Constants */ "./src/Constants.ts");
 class ScreenManager {
     constructor(stage, assetManager) {
+        this.selectionCount = 0;
+        this.state = ScreenManager.STATE_INTRO;
         this.stage = stage;
         this.assetManager = assetManager;
         let background = assetManager.getSprite("sprites", "screens/background", 0, 0);
         background.scaleX = Constants_1.STAGE_WIDTH;
         background.scaleY = Constants_1.STAGE_HEIGHT;
         stage.addChild(background);
+        this.cursor = assetManager.getSprite("sprites", "cursors/checkmark", 0, 0);
         this.introScreen = new createjs.Container();
         this.introScreen.x = 123;
         this.introScreen.y = 140;
@@ -10998,7 +10999,6 @@ class ScreenManager {
         this.introScreen.addChild(btnFourPlayers);
         btnThreePlayers.on("click", (e) => this.closeScreen(this.eventStartGameFor3), this);
         btnFourPlayers.on("click", (e) => this.closeScreen(this.eventStartGameFor4), this);
-        this.cursor = assetManager.getSprite("sprites", "cursors/checkmark", 0, 0);
         this.summaryScreen = new createjs.Container();
         this.summaryScreen.x = 123;
         this.summaryScreen.y = 140;
@@ -11017,20 +11017,23 @@ class ScreenManager {
         this.swapScreen = new createjs.Container();
         this.swapScreen.x = 123;
         this.swapScreen.y = 140;
-        this.swapScreen.addChild(this.assetManager.getSprite("sprites", "screens/summary", 0, 0));
+        this.swapPrompt = this.assetManager.getSprite("sprites", "screens/swapPresident", 0, 0);
+        this.swapScreen.addChild(this.swapPrompt);
         this.swapScreen.on("mouseover", this.onOver, this);
         this.swapScreen.on("mouseout", this.onOut, this);
-        this.swapScreen.on("click", (e) => this.closeScreen(this.eventStartAnotherRound), this);
+        this.swapScreen.on("click", this.onSwapSelection, this);
         this.eventShowSwapScreen = new createjs.Event("showSwapScreen", true, false);
         this.eventStartAnotherRound = new createjs.Event("startAnotherRound", true, false);
         this.eventStartGameFor3 = new createjs.Event("startGameFor3", true, false);
         this.eventStartGameFor4 = new createjs.Event("startGameFor4", true, false);
     }
     showIntro() {
+        this.state = ScreenManager.STATE_INTRO;
         this.hideAll();
         this.stage.addChildAt(this.introScreen, 1);
     }
     showSummary(players) {
+        this.state = ScreenManager.STATE_SUMMARY;
         this.hideAll();
         let dropY = 115;
         this.summaryScreen.removeAllChildren();
@@ -11055,13 +11058,43 @@ class ScreenManager {
         });
         this.stage.addChildAt(this.summaryScreen, 1);
     }
-    showCardSwap() {
+    showCardSwap(humanPlayer) {
+        this.state = ScreenManager.STATE_SWAP;
         this.hideAll();
+        this.humanPlayer = humanPlayer;
+        if (humanPlayer.status > Player_1.default.STATUS_NEUTRAL) {
+            this.cursor.gotoAndStop("cursors/xmark");
+            this.selectionCount = humanPlayer.status;
+        }
+        if (humanPlayer.status == Player_1.default.STATUS_PRES)
+            this.swapPrompt.gotoAndStop("screens/swapPresident");
+        else if (humanPlayer.status == Player_1.default.STATUS_VICE_PRES)
+            this.swapPrompt.gotoAndStop("screens/swapVicePresident");
+        else if (humanPlayer.status == Player_1.default.STATUS_NEUTRAL)
+            this.swapPrompt.gotoAndStop("screens/swapNeutral");
+        else if (humanPlayer.status == Player_1.default.STATUS_VICE_AHOLE)
+            this.swapPrompt.gotoAndStop("screens/swapViceAhole");
+        else if (humanPlayer.status == Player_1.default.STATUS_AHOLE)
+            this.swapPrompt.gotoAndStop("screens/swapAhole");
         this.stage.addChildAt(this.swapScreen, 1);
     }
     update() {
         this.cursor.x = this.stage.mouseX;
         this.cursor.y = this.stage.mouseY;
+        if (this.state == ScreenManager.STATE_SWAP) {
+            if (this.humanPlayer.selectedCards.length != this.selectionCount)
+                this.cursor.gotoAndStop("cursors/xmark");
+            else
+                this.cursor.gotoAndStop("cursors/checkmark");
+        }
+    }
+    onSwapSelection(e) {
+        if (this.humanPlayer.selectedCards.length != this.selectionCount) {
+            console.log("DENIED!");
+        }
+        else {
+            this.closeScreen(this.eventStartAnotherRound);
+        }
     }
     onOver(e) {
         this.introScreen.cursor = "none";
@@ -11083,6 +11116,8 @@ class ScreenManager {
         this.swapScreen.cursor = "default";
         this.stage.removeChild(this.cursor);
         this.hideAll();
+        this.cursor.gotoAndStop("cursors/checkmark");
+        this.selectionCount = 0;
         this.stage.dispatchEvent(event);
     }
     hideAll() {
@@ -11092,6 +11127,10 @@ class ScreenManager {
     }
 }
 exports.default = ScreenManager;
+ScreenManager.STATE_INTRO = 0;
+ScreenManager.STATE_SUMMARY = 2;
+ScreenManager.STATE_SWAP = 3;
+ScreenManager.STATE_GAME_OVER = 4;
 
 
 /***/ }),

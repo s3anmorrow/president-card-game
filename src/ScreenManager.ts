@@ -1,5 +1,6 @@
 import AssetManager from "./AssetManager";
 import Player from "./Player";
+import HumanPlayer from "./HumanPlayer";
 import { STAGE_WIDTH, STAGE_HEIGHT } from "./Constants";
 
 export default class ScreenManager {
@@ -7,13 +8,23 @@ export default class ScreenManager {
     // private eventStartGame:createjs.Event;
     // private eventResetGame:createjs.Event;
 
+    public static STATE_INTRO:number = 0;
+    // public static STATE_GAME:number = 1;
+    public static STATE_SUMMARY:number = 2;
+    public static STATE_SWAP:number = 3;
+    public static STATE_GAME_OVER:number = 4;
+
     private assetManager:AssetManager;
     private introScreen:createjs.Container;
     private summaryScreen:createjs.Container;
     private txtScores:createjs.BitmapText[];
     private swapScreen:createjs.Container;
+    private swapPrompt:createjs.Sprite;
     private cursor:createjs.Sprite;
+    private humanPlayer:HumanPlayer;
+    private selectionCount:number;
     private stage:createjs.StageGL;
+    private state:number;
 
     private eventShowSwapScreen:createjs.Event;
     private eventStartAnotherRound:createjs.Event;
@@ -21,6 +32,8 @@ export default class ScreenManager {
     private eventStartGameFor4:createjs.Event;
 
     constructor(stage:createjs.StageGL, assetManager:AssetManager) {
+        this.selectionCount = 0;
+        this.state = ScreenManager.STATE_INTRO;
         this.stage = stage;
         this.assetManager = assetManager;
 
@@ -29,6 +42,9 @@ export default class ScreenManager {
         background.scaleX = STAGE_WIDTH;
         background.scaleY = STAGE_HEIGHT;
         stage.addChild(background);  
+
+        // cursor sprite
+        this.cursor = assetManager.getSprite("sprites", "cursors/checkmark", 0, 0);
 
         // intro screen initialization
         this.introScreen = new createjs.Container(); 
@@ -48,7 +64,6 @@ export default class ScreenManager {
 
 
         // summary screen initialization
-        this.cursor = assetManager.getSprite("sprites", "cursors/checkmark", 0, 0);
         this.summaryScreen = new createjs.Container();
         this.summaryScreen.x = 123;
         this.summaryScreen.y = 140;
@@ -69,12 +84,11 @@ export default class ScreenManager {
         this.swapScreen = new createjs.Container();
         this.swapScreen.x = 123;
         this.swapScreen.y = 140;
-        // ???????? change this to new graphics
-        this.swapScreen.addChild(this.assetManager.getSprite("sprites","screens/summary",0,0));
-        // ??????????????
+        this.swapPrompt = this.assetManager.getSprite("sprites","screens/swapPresident",0,0);
+        this.swapScreen.addChild(this.swapPrompt);
         this.swapScreen.on("mouseover", this.onOver, this);
         this.swapScreen.on("mouseout", this.onOut, this);
-        this.swapScreen.on("click", (e:createjs.Event) => this.closeScreen(this.eventStartAnotherRound), this);
+        this.swapScreen.on("click", this.onSwapSelection, this);
 
         // this.gameOverScreen = new createjs.Container();
         // this.gameOverScreen.addChild(assetManager.getSprite("sprites","misc/backgroundGame",0,0));
@@ -89,7 +103,8 @@ export default class ScreenManager {
     }
 
     // -------------------------------------------------- public methods
-    public showIntro():void {        
+    public showIntro():void {  
+        this.state = ScreenManager.STATE_INTRO;      
         this.hideAll();
         this.stage.addChildAt(this.introScreen,1);
     }
@@ -110,6 +125,7 @@ export default class ScreenManager {
     // }
 
     public showSummary(players:Player[]):void {
+        this.state = ScreenManager.STATE_SUMMARY;
         this.hideAll();
         let dropY:number = 115;
 
@@ -136,18 +152,50 @@ export default class ScreenManager {
         this.stage.addChildAt(this.summaryScreen,1);
     }
 
-    public showCardSwap():void {
+    public showCardSwap(humanPlayer:HumanPlayer):void {
+        this.state = ScreenManager.STATE_SWAP;
         this.hideAll();
-        this.stage.addChildAt(this.swapScreen,1);
+
+        // does the human player have to select cards to swap?
+        this.humanPlayer = humanPlayer;
+        if (humanPlayer.status > Player.STATUS_NEUTRAL) {
+            // change cursor to xmark (until cards selected for unloading)
+            this.cursor.gotoAndStop("cursors/xmark");
+            this.selectionCount = humanPlayer.status;
+        }
+
+        // display correct prompt according to human player's status
+        if (humanPlayer.status == Player.STATUS_PRES) this.swapPrompt.gotoAndStop("screens/swapPresident");
+        else if (humanPlayer.status == Player.STATUS_VICE_PRES) this.swapPrompt.gotoAndStop("screens/swapVicePresident");
+        else if (humanPlayer.status == Player.STATUS_NEUTRAL) this.swapPrompt.gotoAndStop("screens/swapNeutral");
+        else if (humanPlayer.status == Player.STATUS_VICE_AHOLE) this.swapPrompt.gotoAndStop("screens/swapViceAhole");
+        else if (humanPlayer.status == Player.STATUS_AHOLE) this.swapPrompt.gotoAndStop("screens/swapAhole");
+        this.stage.addChildAt(this.swapScreen, 1);
     }
 
     // --------------------------------------------------- public methods
     public update():void {
         this.cursor.x = this.stage.mouseX;
         this.cursor.y = this.stage.mouseY;
+        if (this.state == ScreenManager.STATE_SWAP) {
+            if (this.humanPlayer.selectedCards.length != this.selectionCount) this.cursor.gotoAndStop("cursors/xmark");
+            else this.cursor.gotoAndStop("cursors/checkmark");
+        }
     }     
 
     // -------------------------------------------------- event handlers
+    private onSwapSelection(e:createjs.Event):void {
+        if (this.humanPlayer.selectedCards.length != this.selectionCount) {
+
+            // ????????????
+            console.log("DENIED!");
+
+
+        } else {
+            this.closeScreen(this.eventStartAnotherRound);
+        }
+    }
+
     private onOver(e:createjs.Event):void {
         // hide real cursor
         this.introScreen.cursor = "none";
@@ -173,6 +221,8 @@ export default class ScreenManager {
         this.swapScreen.cursor = "default";        
         this.stage.removeChild(this.cursor);
         this.hideAll();
+        this.cursor.gotoAndStop("cursors/checkmark");
+        this.selectionCount = 0;
         this.stage.dispatchEvent(event);        
     }
 

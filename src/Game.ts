@@ -204,7 +204,7 @@ function onGameEvent(e:createjs.Event):void {
                 table.currentPlayer = humanPlayer;            
                 table.showTurnMarker();
             }
-            screenManager.showCardSwap();
+            screenManager.showCardSwap(humanPlayer);
             break;
 
             // ??????????
@@ -216,18 +216,11 @@ function onGameEvent(e:createjs.Event):void {
             // TODO points system to end the game
             
         case "startAnotherRound":
-            console.log("NEW ROUND");
-            
-            // ?????????????????
-            // any cards selected to swap before new round?
-            if (humanPlayer.selectedCards.length > 0) {
-                
-                console.log("Cards to get rid of:");
-                console.log(humanPlayer.selectedCards);
+            console.log("NEW ROUND");                
+            console.log("Cards to get rid of:");
+            console.log(humanPlayer.selectedCards);
 
-            }
-
-            startRound();
+            // startRound();
             break;
         case "gameOver":
                 
