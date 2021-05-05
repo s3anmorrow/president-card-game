@@ -10526,6 +10526,7 @@ function startRound() {
     players.forEach(player => player.softReset());
     table.currentPlayer = players[turnIndex];
     table.showMe();
+    screenManager.showGame();
     if (players[turnIndex] instanceof HumanPlayer_1.default) {
         onTurn();
         humanPlayer.enableMe();
@@ -10998,6 +10999,10 @@ class ScreenManager {
         this.introScreen.addChild(btnFourPlayers);
         btnThreePlayers.on("click", (e) => this.closeScreen(this.eventStartGameFor3), this);
         btnFourPlayers.on("click", (e) => this.closeScreen(this.eventStartGameFor4), this);
+        this.gameScreen = new createjs.Container();
+        this.gameScreen.addChild(assetManager.getSprite("sprites", "screens/tableLabel1", 400, 145));
+        this.gameScreen.addChild(assetManager.getSprite("sprites", "screens/tableLabel2", 400, 354));
+        this.gameScreen.addChild(assetManager.getSprite("sprites", "screens/tableLabel3", 400, 376));
         this.summaryScreen = new createjs.Container();
         this.summaryScreen.x = 123;
         this.summaryScreen.y = 140;
@@ -11030,6 +11035,11 @@ class ScreenManager {
         this.state = ScreenManager.STATE_INTRO;
         this.hideAll();
         this.stage.addChildAt(this.introScreen, 1);
+    }
+    showGame() {
+        this.state = ScreenManager.STATE_GAME;
+        this.hideAll();
+        this.stage.addChildAt(this.gameScreen, 1);
     }
     showSummary(players) {
         this.state = ScreenManager.STATE_SUMMARY;
@@ -11123,10 +11133,12 @@ class ScreenManager {
         this.stage.removeChild(this.introScreen);
         this.stage.removeChild(this.summaryScreen);
         this.stage.removeChild(this.swapScreen);
+        this.stage.removeChild(this.gameScreen);
     }
 }
 exports.default = ScreenManager;
 ScreenManager.STATE_INTRO = 0;
+ScreenManager.STATE_GAME = 1;
 ScreenManager.STATE_SUMMARY = 2;
 ScreenManager.STATE_SWAP = 3;
 ScreenManager.STATE_GAME_OVER = 4;
@@ -11155,10 +11167,6 @@ class Table {
         this._players = [];
         this.statusCounter = 0;
         this.playersInRound = 0;
-        this.labelContainer = new createjs.Container();
-        this.labelContainer.addChild(assetManager.getSprite("sprites", "screens/tableLabel1", 400, 145));
-        this.labelContainer.addChild(assetManager.getSprite("sprites", "screens/tableLabel2", 400, 354));
-        this.labelContainer.addChild(assetManager.getSprite("sprites", "screens/tableLabel3", 400, 376));
         this._playSpot = new createjs.Container();
         this._playSpot.x = 291;
         this._playSpot.y = 168;
@@ -11225,11 +11233,9 @@ class Table {
         loser.status = this.statusRankings[this.statusCounter];
     }
     hideMe() {
-        this.stage.removeChild(this.labelContainer);
         this.stage.removeChild(this.playSpot);
     }
     showMe() {
-        this.stage.addChildAt(this.labelContainer, 1);
         this.stage.addChildAt(this.playSpot, 1);
     }
     dealCards() {

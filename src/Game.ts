@@ -76,6 +76,7 @@ function startRound():void {
 
     table.currentPlayer = players[turnIndex];
     table.showMe();
+    screenManager.showGame();
 
 
 
@@ -213,7 +214,6 @@ function onGameEvent(e:createjs.Event):void {
             // ??????????
             // TODO handle when humanplayer is neutral (3 players)
             // TODO add names to players on table
-            // TODO move labelContainer of table into ScreenManager
             // TODO points system to end the game
             
         case "startAnotherRound":

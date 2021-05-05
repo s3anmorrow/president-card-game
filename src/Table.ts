@@ -10,7 +10,6 @@ export default class Table {
     private statusCounter:number;
     private statusRankings:number[];
     private passIndicator:createjs.Sprite;    
-    private labelContainer:createjs.Container;
     private playersInRound:number
 
     private _currentPlayer:Player;
@@ -28,20 +27,12 @@ export default class Table {
         this._players = [];
         this.statusCounter = 0;
         this.playersInRound = 0;
-        
-        // table label sprites
-        this.labelContainer = new createjs.Container();
-        this.labelContainer.addChild(assetManager.getSprite("sprites","screens/tableLabel1",400,145));
-        this.labelContainer.addChild(assetManager.getSprite("sprites","screens/tableLabel2",400,354));
-        this.labelContainer.addChild(assetManager.getSprite("sprites","screens/tableLabel3",400,376));
-        // this.stage.addChild(this.labelContainer);
 
         // playspot where players drop cards
         this._playSpot = new createjs.Container();
         this._playSpot.x = 291;
         this._playSpot.y = 168;
         this._playSpot.addChild(assetManager.getSprite("sprites", "screens/playSpot", 0, 0));
-        // this.stage.addChild(this._playSpot);
 
         // construct passIndicator sprite for showing computer passed
         this.passIndicator = assetManager.getSprite("sprites", "cursors/pass", 109, 83);
@@ -126,12 +117,10 @@ export default class Table {
     }
 
     public hideMe():void {
-        this.stage.removeChild(this.labelContainer);
         this.stage.removeChild(this.playSpot);
     }
 
     public showMe():void {
-        this.stage.addChildAt(this.labelContainer,1);
         this.stage.addChildAt(this.playSpot,1);
     }
 
@@ -367,7 +356,6 @@ export default class Table {
                 dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * PLAYER_CARD_SPREAD) + 99))/2);
                 dropSpotY = 440;
             }
-
             // placing cards onto table
             for (let card of cards) {
                 card.positionMe(dropSpotX, dropSpotY);

@@ -9,7 +9,7 @@ export default class ScreenManager {
     // private eventResetGame:createjs.Event;
 
     public static STATE_INTRO:number = 0;
-    // public static STATE_GAME:number = 1;
+    public static STATE_GAME:number = 1;
     public static STATE_SUMMARY:number = 2;
     public static STATE_SWAP:number = 3;
     public static STATE_GAME_OVER:number = 4;
@@ -23,6 +23,7 @@ export default class ScreenManager {
     private cursor:createjs.Sprite;
     private humanPlayer:HumanPlayer;
     private selectionCount:number;
+    private gameScreen:createjs.Container;
     private stage:createjs.StageGL;
     private state:number;
 
@@ -62,7 +63,11 @@ export default class ScreenManager {
         btnThreePlayers.on("click", (e:createjs.Event) => this.closeScreen(this.eventStartGameFor3), this);
         btnFourPlayers.on("click", (e:createjs.Event) => this.closeScreen(this.eventStartGameFor4), this);
 
-
+        // game screen initialization
+        this.gameScreen = new createjs.Container();
+        this.gameScreen.addChild(assetManager.getSprite("sprites","screens/tableLabel1",400,145));
+        this.gameScreen.addChild(assetManager.getSprite("sprites","screens/tableLabel2",400,354));
+        this.gameScreen.addChild(assetManager.getSprite("sprites","screens/tableLabel3",400,376));  
 
         // summary screen initialization
         this.summaryScreen = new createjs.Container();
@@ -110,20 +115,11 @@ export default class ScreenManager {
         this.stage.addChildAt(this.introScreen,1);
     }
 
-    // public showGame():void {
-    //     this.hideAll();
-    //     this.stage.addChildAt(this.gameScreen,0);
-    // }
-
-    // public showGameOver():void {
-    //     this.hideAll();
-    //     this.stage.addChildAt(this.gameOverScreen,0);
-
-    //     // wire up listener to detect click event once and dispatch custom event
-    //     this.stage.on("click", (e) => {
-    //         this.stage.dispatchEvent(this.eventResetGame);
-    //     }, this, true);
-    // }
+    public showGame():void {
+        this.state = ScreenManager.STATE_GAME;
+        this.hideAll();
+        this.stage.addChildAt(this.gameScreen, 1);
+    }
 
     public showSummary(players:Player[]):void {
         this.state = ScreenManager.STATE_SUMMARY;
@@ -232,6 +228,7 @@ export default class ScreenManager {
         this.stage.removeChild(this.introScreen);
         this.stage.removeChild(this.summaryScreen);
         this.stage.removeChild(this.swapScreen);
+        this.stage.removeChild(this.gameScreen);
         // this.stage.removeChild(this.gameScreen);
     }
 }
