@@ -10437,7 +10437,7 @@ exports.FRAME_RATE = 30;
 exports.PLAYER_CARD_SPREAD = 33;
 exports.COMPUTER_CARD_SPREAD = 20;
 exports.TURN_DELAY = 200;
-exports.WIN_SCORE = 2;
+exports.WIN_SCORE = 10;
 exports.ASSET_MANIFEST = [
     {
         type: "json",
@@ -10649,7 +10649,7 @@ function onGameEvent(e) {
             startRound();
             break;
         case "gameOver":
-            console.log("GAME. IS. OVER.");
+            table.hideTurnMarker();
             let winner = players.find(player => player.score >= Constants_1.WIN_SCORE);
             screenManager.showGameOver(winner);
             break;
@@ -10660,8 +10660,11 @@ function onReady(e) {
     screenManager = new ScreenManager_1.default(stage, assetManager);
     table = new Table_1.default(stage, assetManager);
     deck = [];
-    for (let n = 2; n <= 13; n++) {
+    for (let n = 2; n <= 14; n++) {
         deck.push(new Card_1.default(stage, assetManager, table, "C", n));
+        deck.push(new Card_1.default(stage, assetManager, table, "H", n));
+        deck.push(new Card_1.default(stage, assetManager, table, "D", n));
+        deck.push(new Card_1.default(stage, assetManager, table, "S", n));
     }
     humanPlayer = new HumanPlayer_1.default("You", stage, assetManager, deck, table);
     computerPlayer1 = new ComputerPlayer_1.default("Shifty", stage, assetManager, deck, humanPlayer, table);
@@ -11428,6 +11431,9 @@ class Table {
     showTurnMarker() {
         this._players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
         this._currentPlayer.hand.forEach(card => card.showTurnMarker());
+    }
+    hideTurnMarker() {
+        this._players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
     }
     refreshCards() {
         let dropSpotX;

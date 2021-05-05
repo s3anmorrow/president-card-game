@@ -324,6 +324,10 @@ export default class Table {
         this._currentPlayer.hand.forEach(card => card.showTurnMarker())
     }
 
+    public hideTurnMarker():void {
+        this._players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
+    }
+
     public refreshCards():void {
         let dropSpotX:number;
         let dropSpotY:number;

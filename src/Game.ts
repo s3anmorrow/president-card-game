@@ -1,3 +1,13 @@
+// ??????????
+// TODO handle when humanplayer is neutral (3 players)
+// TODO add names to players on table
+// TODO speed up game when human is out
+// TODO random player to start when new game
+// TODO remove all the player[turnIndex] in Game.ts
+// TODO add squares to corner of stage
+// TODO fix issue with mouseover cards
+
+
 // createjs typescript definition for TypeScript
 /// <reference path="./../node_modules/@types/createjs/index.d.ts" />
 // importing createjs framework
@@ -80,9 +90,6 @@ function startRound():void {
     table.currentPlayer = players[turnIndex];
     table.showMe();
     screenManager.showGame();
-
-
-
 
     // start the turn timer if not currently human's turn
     if (players[turnIndex] instanceof HumanPlayer) {
@@ -212,16 +219,6 @@ function onGameEvent(e:createjs.Event):void {
             }
             screenManager.showCardSwap(humanPlayer);
             break;
-
-            // ??????????
-            // TODO handle when humanplayer is neutral (3 players)
-            // TODO add names to players on table
-            // TODO speed up game when human is out
-            // TODO random player to start when new game
-            // TODO remove all the player[turnIndex] in Game.ts
-            // TODO add squares to corner of stage
-            // TODO fix issue with mouseover cards
-            
         case "startAnotherRound":
             console.log("NEW ROUND");                
             console.log("Cards to get rid of:");
@@ -233,12 +230,9 @@ function onGameEvent(e:createjs.Event):void {
             startRound();
             break;
         case "gameOver":
-
-            console.log("GAME. IS. OVER.");
-
+            table.hideTurnMarker();
             let winner:Player = players.find(player => player.score >= WIN_SCORE);
             screenManager.showGameOver(winner);
-                
             break;
     }
 }
@@ -252,12 +246,12 @@ function onReady(e:createjs.Event):void {
     table = new Table(stage, assetManager);
     // construct deck of Cards
     deck = [];
-    // for (let n:number=2; n<=14; n++) {
-    for (let n:number=2; n<=13; n++) {
+    for (let n:number=2; n<=14; n++) {
+    // for (let n:number=2; n<=13; n++) {
         deck.push(new Card(stage, assetManager, table, "C",n));
-        // deck.push(new Card(stage, assetManager, table, "H",n));
-        // deck.push(new Card(stage, assetManager, table, "D",n));
-        // deck.push(new Card(stage, assetManager, table, "S",n));
+        deck.push(new Card(stage, assetManager, table, "H",n));
+        deck.push(new Card(stage, assetManager, table, "D",n));
+        deck.push(new Card(stage, assetManager, table, "S",n));
     }
     // construct human player
     humanPlayer = new HumanPlayer("You", stage, assetManager, deck, table);
