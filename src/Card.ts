@@ -128,8 +128,9 @@ export default class Card {
         this.stage.removeChild(this.removeMarkerSprite);
     }
 
-    public hideAddMarker():void {
+    public hideAllMarkers():void {
         this.stage.removeChild(this.addMarkerSprite);
+        this.hideRemoveMarker();
     }
 
     public rotateMe(degree:number):void {
@@ -160,10 +161,9 @@ export default class Card {
 
     public reset():void {
         this._state = Card.STATE_ENABLED;
-        this.hideMe();
+        // this.hideMe();
         this.hideTurnMarker();
-        this.hideAddMarker();
-        this.hideRemoveMarker();
+        this.hideAllMarkers();
     }
 
 }

@@ -48,12 +48,13 @@ export default class ScreenManager {
 
         // intro screen initialization
         this.introScreen = new createjs.Container(); 
-        this.introScreen.x = 123;
-        this.introScreen.y = 140;        
-        let btnThreePlayers:createjs.Sprite = this.assetManager.getSprite("sprites","cards/turnMarker",0,0);
+        this.introScreen.x = 125;
+        this.introScreen.y = 114;   
+        this.introScreen.addChild(assetManager.getSprite("sprites", "screens/intro", 0, 0));     
+        let btnThreePlayers:createjs.Sprite = this.assetManager.getSprite("sprites","screens/btnThreePlayers",55,190);
         btnThreePlayers.on("mouseover", this.onOver, this);
         btnThreePlayers.on("mouseout", this.onOut, this);
-        let btnFourPlayers:createjs.Sprite = this.assetManager.getSprite("sprites","cards/turnMarker",200,0);
+        let btnFourPlayers:createjs.Sprite = this.assetManager.getSprite("sprites","screens/btnFourPlayers",55,250);
         btnFourPlayers.on("mouseover", this.onOver, this);
         btnFourPlayers.on("mouseout", this.onOut, this);
         this.introScreen.addChild(btnThreePlayers);

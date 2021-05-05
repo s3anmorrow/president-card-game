@@ -10269,8 +10269,9 @@ class Card {
     hideRemoveMarker() {
         this.stage.removeChild(this.removeMarkerSprite);
     }
-    hideAddMarker() {
+    hideAllMarkers() {
         this.stage.removeChild(this.addMarkerSprite);
+        this.hideRemoveMarker();
     }
     rotateMe(degree) {
         this.sprite.rotation = degree;
@@ -10295,10 +10296,8 @@ class Card {
     }
     reset() {
         this._state = Card.STATE_ENABLED;
-        this.hideMe();
         this.hideTurnMarker();
-        this.hideAddMarker();
-        this.hideRemoveMarker();
+        this.hideAllMarkers();
     }
 }
 exports.default = Card;
@@ -10505,16 +10504,27 @@ let turnPhase;
 let playType;
 let passCounter;
 let roundOn;
+function startGame() {
+    humanPlayer.hardReset();
+    computerPlayer1.hardReset();
+    computerPlayer2.hardReset();
+    computerPlayer3.hardReset();
+    if (playerTotalCount == 3)
+        table.setup(humanPlayer, computerPlayer1, computerPlayer2);
+    else
+        table.setup(humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3);
+    players = table.players;
+    table.dealCards();
+    startRound();
+}
 function startRound() {
     roundOn = true;
     passCounter = 0;
     turnIndex = 0;
     turnPhase = 1;
     playType = Player_1.default.PLAYED_NONE;
-    players = table.players;
     players.forEach(player => player.softReset());
     table.currentPlayer = players[turnIndex];
-    table.dealCards();
     table.showMe();
     if (players[turnIndex] instanceof HumanPlayer_1.default) {
         onTurn();
@@ -10592,15 +10602,7 @@ function onGameEvent(e) {
             playerTotalCount = 3;
         case "startGameFor4":
             playerTotalCount = 4;
-            humanPlayer.hardReset();
-            computerPlayer1.hardReset();
-            computerPlayer2.hardReset();
-            computerPlayer3.hardReset();
-            if (playerTotalCount == 3)
-                table.setup(humanPlayer, computerPlayer1, computerPlayer2);
-            else
-                table.setup(humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3);
-            startRound();
+            startGame();
             break;
         case "cardsSelected":
             console.log("=> HUMAN'S TURN");
@@ -10621,20 +10623,13 @@ function onGameEvent(e) {
             roundOn = false;
             window.clearInterval(turnTimer);
             table.showLoser();
-            players.sort((a, b) => {
-                if (a.status > b.status)
-                    return -1;
-                else if (a.status < b.status)
-                    return 1;
-                else
-                    return 0;
-            });
-            players.forEach(player => player.updateScore());
+            table.shufflePlayers();
             table.hideMe();
             screenManager.showSummary(players);
             break;
         case "showSwapScreen":
             console.log("CARD SWAP");
+            table.reset();
             table.dealCards();
             if (table.swapCards()) {
                 humanPlayer.startSwapSelection();
@@ -10647,6 +10642,8 @@ function onGameEvent(e) {
             console.log("NEW ROUND");
             console.log("Cards to get rid of:");
             console.log(humanPlayer.selectedCards);
+            table.unloadHumanCards();
+            startRound();
             break;
         case "gameOver":
             break;
@@ -10929,11 +10926,12 @@ class Player {
         this._state = Player.STATE_CARDS_NOT_SELECTED;
         this._status = Player.STATUS_NEUTRAL;
         this._selectedCards = [];
-        this.returnCards();
-        this._hand = [];
+        this._hand.forEach(card => card.hideAllMarkers());
     }
     hardReset() {
         this.softReset();
+        this.returnCards();
+        this._hand = [];
         this._score = 0;
         this._state = Player.STATE_NOT_PLAYING;
         this._orientation = Player.ORIENTATION_BOTTOM;
@@ -10946,10 +10944,10 @@ Player.STATE_CARDS_NOT_SELECTED = 2;
 Player.STATE_DISABLED = 3;
 Player.STATE_OUT = 4;
 Player.STATE_CARD_SWAPPING = 5;
-Player.ORIENTATION_LEFT = 1;
-Player.ORIENTATION_TOP = 2;
-Player.ORIENTATION_RIGHT = 3;
-Player.ORIENTATION_BOTTOM = 4;
+Player.ORIENTATION_BOTTOM = 1;
+Player.ORIENTATION_LEFT = 2;
+Player.ORIENTATION_TOP = 3;
+Player.ORIENTATION_RIGHT = 4;
 Player.PLAYED_PASS = 0;
 Player.PLAYED_TWO = 1;
 Player.PLAYED_CARD = 2;
@@ -10987,12 +10985,13 @@ class ScreenManager {
         stage.addChild(background);
         this.cursor = assetManager.getSprite("sprites", "cursors/checkmark", 0, 0);
         this.introScreen = new createjs.Container();
-        this.introScreen.x = 123;
-        this.introScreen.y = 140;
-        let btnThreePlayers = this.assetManager.getSprite("sprites", "cards/turnMarker", 0, 0);
+        this.introScreen.x = 125;
+        this.introScreen.y = 114;
+        this.introScreen.addChild(assetManager.getSprite("sprites", "screens/intro", 0, 0));
+        let btnThreePlayers = this.assetManager.getSprite("sprites", "screens/btnThreePlayers", 55, 190);
         btnThreePlayers.on("mouseover", this.onOver, this);
         btnThreePlayers.on("mouseout", this.onOut, this);
-        let btnFourPlayers = this.assetManager.getSprite("sprites", "cards/turnMarker", 200, 0);
+        let btnFourPlayers = this.assetManager.getSprite("sprites", "screens/btnFourPlayers", 55, 250);
         btnFourPlayers.on("mouseover", this.onOver, this);
         btnFourPlayers.on("mouseout", this.onOut, this);
         this.introScreen.addChild(btnThreePlayers);
@@ -11186,7 +11185,6 @@ class Table {
     reset() {
         this.hidePass();
         this.clearTable();
-        this.hidePass();
         this.playersInRound = this._players.length;
         this.statusCounter = 0;
         this._playedCards = [];
@@ -11242,6 +11240,23 @@ class Table {
             if (finished)
                 break;
         }
+        this.refreshCards();
+    }
+    unloadHumanCards() {
+        let donor = this._players.find(player => player instanceof HumanPlayer_1.default);
+        if (donor.selectedCards.length == 0)
+            return;
+        let receiver;
+        if (donor.status == Player_1.default.STATUS_PRES) {
+            receiver = this._players.find(player => player.status == Player_1.default.STATUS_AHOLE);
+        }
+        else if (donor.status == Player_1.default.STATUS_VICE_PRES) {
+            receiver = this._players.find(player => player.status == Player_1.default.STATUS_VICE_AHOLE);
+        }
+        donor.selectedCards.forEach(card => {
+            donor.hand.splice(donor.hand.findIndex(myCard => myCard == card), 1);
+            receiver.hand.push(card);
+        });
         this.refreshCards();
     }
     swapCards() {
@@ -11337,6 +11352,27 @@ class Table {
                 this.stage.dispatchEvent(this.eventRoundOver);
         }
         return playType;
+    }
+    shufflePlayers() {
+        this._players.sort((a, b) => {
+            if (a.status > b.status)
+                return -1;
+            else if (a.status < b.status)
+                return 1;
+            else
+                return 0;
+        });
+        let maxIndex = this._players.length - 1;
+        let index = this._players.findIndex(player => player instanceof HumanPlayer_1.default);
+        for (let orientCounter = 1; orientCounter <= 4; orientCounter++) {
+            if ((this._players.length == 3) && (orientCounter == 3))
+                orientCounter = 4;
+            this._players[index].orientation = orientCounter;
+            index++;
+            if (index > maxIndex)
+                index = 0;
+        }
+        this._players.forEach(player => player.updateScore());
     }
     validateCards() {
         let selectedCards = this._currentPlayer.selectedCards;

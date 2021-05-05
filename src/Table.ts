@@ -59,13 +59,6 @@ export default class Table {
         return this._currentPlayer;
     }
 
-    // public set players(value:Player[]) {
-    //     this._players = value;
-    //     // set possible status rankings for number of players
-    //     if (this._players.length == 4) this.statusRankings = [2,1,-1,-2];
-    //     else this.statusRankings = [1,0,-1];
-    // }
-
     public get playSpot():createjs.Container {
         return this._playSpot;
     }
@@ -82,7 +75,6 @@ export default class Table {
     public reset():void {
         this.hidePass();
         this.clearTable();
-        this.hidePass();
         this.playersInRound = this._players.length;
         this.statusCounter = 0;
         this._playedCards = [];
@@ -156,6 +148,28 @@ export default class Table {
         this.refreshCards();
     }
 
+    public unloadHumanCards():void {
+        // find human player (donor)
+        let donor:Player = this._players.find(player => player instanceof HumanPlayer);
+
+        // any cards to unload?
+        if (donor.selectedCards.length == 0) return;
+
+        let receiver:Player;
+        // find targetted computer player (receiver)
+        if (donor.status == Player.STATUS_PRES) {
+            receiver = this._players.find(player => player.status == Player.STATUS_AHOLE);
+        } else if (donor.status == Player.STATUS_VICE_PRES) {
+            receiver = this._players.find(player => player.status == Player.STATUS_VICE_AHOLE);
+        }
+        // move cards from donor to receiver
+        donor.selectedCards.forEach(card => {
+            donor.hand.splice(donor.hand.findIndex(myCard => myCard == card), 1);
+            receiver.hand.push(card);
+        });
+        this.refreshCards();
+    }
+
     public swapCards():boolean {
         let donor:Player;
         let cardsToSwap:Card[];
@@ -213,7 +227,7 @@ export default class Table {
             cardsToSwap.forEach(card => {
                 // remove card from donor's hand
                 donor.hand.splice(donor.hand.findIndex(myCard => myCard == card), 1);
-                // add card to new player's hand
+                // add card to receiver's hand
                 receiver.hand.push(card);
                 if (receiver instanceof HumanPlayer) card.showAddMarker();
             });
@@ -278,6 +292,28 @@ export default class Table {
         }
 
         return playType;
+    }
+
+    public shufflePlayers():void {
+        // sort players in order of status for next round
+        this._players.sort((a:Player, b:Player) => {
+            if (a.status > b.status) return -1;
+            else if (a.status < b.status) return 1;
+            else return 0;
+        });
+
+        // update orientation of players to match status order
+        let maxIndex:number = this._players.length - 1;
+        let index:number = this._players.findIndex(player => player instanceof HumanPlayer);
+        for (let orientCounter:number=1; orientCounter<=4; orientCounter++) {
+            if ((this._players.length == 3) && (orientCounter == 3)) orientCounter = 4;
+            this._players[index].orientation = orientCounter;
+            index++;
+            if (index > maxIndex) index = 0;
+        }
+
+        // update score for each player according to status
+        this._players.forEach(player => player.updateScore());
     }
 
     public validateCards():boolean {

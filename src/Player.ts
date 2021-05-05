@@ -11,11 +11,11 @@ export default abstract class Player {
     public static STATE_DISABLED:number = 3;
     public static STATE_OUT:number = 4;
     public static STATE_CARD_SWAPPING:number = 5;
-
-    public static ORIENTATION_LEFT:number = 1;
-    public static ORIENTATION_TOP:number = 2;
-    public static ORIENTATION_RIGHT:number = 3;
-    public static ORIENTATION_BOTTOM:number = 4;
+    
+    public static ORIENTATION_BOTTOM:number = 1;
+    public static ORIENTATION_LEFT:number = 2;
+    public static ORIENTATION_TOP:number = 3;
+    public static ORIENTATION_RIGHT:number = 4;
 
     public static PLAYED_PASS:number = 0;
     public static PLAYED_TWO:number = 1;
@@ -149,13 +149,15 @@ export default abstract class Player {
     public softReset(hard:boolean = false):void {
         this._state = Player.STATE_CARDS_NOT_SELECTED;        
         this._status = Player.STATUS_NEUTRAL;
-        this._selectedCards = [];
-        this.returnCards();
-        this._hand = [];        
+        this._selectedCards = []; 
+        // clear out markers on all cards from previous round
+        this._hand.forEach(card => card.hideAllMarkers());
     }
 
     public hardReset():void {
         this.softReset();
+        this.returnCards();
+        this._hand = [];         
         this._score = 0;
         this._state = Player.STATE_NOT_PLAYING; 
         this._orientation = Player.ORIENTATION_BOTTOM;   

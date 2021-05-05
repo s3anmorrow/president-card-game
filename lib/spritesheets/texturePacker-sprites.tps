@@ -420,6 +420,22 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
+            <key type="filename">screens/btnFourPlayers.png</key>
+            <key type="filename">screens/btnThreePlayers.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0,0</point_f>
+                <key>spriteScale</key>
+                <double>1</double>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>111,12,223,23</rect>
+                <key>scale9Paddings</key>
+                <rect>111,12,223,23</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
             <key type="filename">screens/instructions.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
@@ -432,6 +448,21 @@
                 <rect>97,79,193,157</rect>
                 <key>scale9Paddings</key>
                 <rect>97,79,193,157</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">screens/intro.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0,0</point_f>
+                <key>spriteScale</key>
+                <double>1</double>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>139,70,277,140</rect>
+                <key>scale9Paddings</key>
+                <rect>139,70,277,140</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>

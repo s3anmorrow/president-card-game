@@ -1,6 +1,5 @@
 // createjs typescript definition for TypeScript
 /// <reference path="./../node_modules/@types/createjs/index.d.ts" />
-
 // importing createjs framework
 import "createjs";
 // importing game constants
@@ -38,6 +37,27 @@ let passCounter:number;
 let roundOn:boolean;
 
 // --------------------------------------------------- private methods
+function startGame():void {
+    // hard reset all possible players for new game (despite whether will be in game or not)
+    humanPlayer.hardReset();
+    computerPlayer1.hardReset();
+    computerPlayer2.hardReset();
+    computerPlayer3.hardReset();
+
+    // setup table with players for new game
+    if (playerTotalCount == 3) table.setup(humanPlayer, computerPlayer1, computerPlayer2);
+    else table.setup(humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3);
+
+    // ?????? use table.players throughout?
+    players = table.players;
+    // ??????
+
+    // new game - deal the cards before starting the round
+    table.dealCards();
+
+    startRound();
+}
+
 function startRound():void {
     roundOn = true;            
     passCounter = 0;
@@ -45,14 +65,20 @@ function startRound():void {
     turnPhase = 1;
     playType = Player.PLAYED_NONE;
 
-    // ?????? use table.players throughout?
-    players = table.players;
-    // ??????
-
+    // soft reset all players for new round
     players.forEach(player => player.softReset()); 
+
+    // ????????????????
+    // // when game first starts, randomly pick who goes first
+    // // turnIndex = randomMe(0, players.length - 1);
+    // turnIndex = 0;
+    // table.player = players[turnIndex]; 
+
     table.currentPlayer = players[turnIndex];
-    table.dealCards();
     table.showMe();
+
+
+
 
     // start the turn timer if not currently human's turn
     if (players[turnIndex] instanceof HumanPlayer) {
@@ -140,23 +166,7 @@ function onGameEvent(e:createjs.Event):void {
             playerTotalCount = 3;
         case "startGameFor4":
             playerTotalCount = 4;
-            // reset all players for new game
-            humanPlayer.hardReset();
-            computerPlayer1.hardReset();
-            computerPlayer2.hardReset();
-            computerPlayer3.hardReset();
-            // setup table with players for new game
-            if (playerTotalCount == 3) table.setup(humanPlayer, computerPlayer1, computerPlayer2);
-            else table.setup(humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3);
-
-            // ????????????????
-            // // when game first starts, randomly pick who goes first
-            // // turnIndex = randomMe(0, players.length - 1);
-            // turnIndex = 0;
-            // table.player = players[turnIndex];  
-
-            startRound();
-
+            startGame();
             break;
         case "cardsSelected":
             console.log("=> HUMAN'S TURN");
@@ -181,21 +191,14 @@ function onGameEvent(e:createjs.Event):void {
             roundOn = false;
             window.clearInterval(turnTimer);
             table.showLoser();
-            // sort players in order of status for next game / summary screen
-            players.sort((a:Player, b:Player) => {
-                if (a.status > b.status) return -1;
-                else if (a.status < b.status) return 1;
-                else return 0;
-            });
-            // update score for each player
-            players.forEach(player => player.updateScore());
-            // humanPlayer.disableMe();
+            table.shufflePlayers();
             table.hideMe();
             screenManager.showSummary(players);
             break;
         case "showSwapScreen":
             console.log("CARD SWAP");
             
+            table.reset();
             table.dealCards();
             if (table.swapCards()) {
                 // human is pres or vice-pres - card selection required
@@ -211,8 +214,6 @@ function onGameEvent(e:createjs.Event):void {
             // TODO handle when humanplayer is neutral (3 players)
             // TODO add names to players on table
             // TODO move labelContainer of table into ScreenManager
-            // TODO resetting game
-            // TODO start screen
             // TODO points system to end the game
             
         case "startAnotherRound":
@@ -220,7 +221,10 @@ function onGameEvent(e:createjs.Event):void {
             console.log("Cards to get rid of:");
             console.log(humanPlayer.selectedCards);
 
-            // startRound();
+            // unload cards from human to computer player of lower status if required
+            table.unloadHumanCards();
+
+            startRound();
             break;
         case "gameOver":
                 
