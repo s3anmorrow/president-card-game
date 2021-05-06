@@ -31,7 +31,6 @@ export default abstract class Player {
     protected stage:createjs.StageGL;
     protected deck:Card[];
     protected table:Table;
-    protected turnDelayTimer:number;
 
     protected _state:number;
     protected _name:string;
@@ -122,6 +121,7 @@ export default abstract class Player {
 
     public returnCards():void {
         this._hand.forEach(card => this.deck.push(card));
+        this._selectedCards = [];
         this._hand = [];
     }
 

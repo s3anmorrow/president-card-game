@@ -1,8 +1,9 @@
 // ??????????
 // TODO handle when humanplayer is neutral (3 players)
-// TODO add names to players on table
 // TODO fix issue with mouseover cards
-// TODO sound effects
+// TODO neutral reg point needs adjusting
+// TODO make turn marker border thicker
+// TODO add out of 10 on summary screen
 // ??????????
 
 // createjs typescript definition for TypeScript
@@ -45,10 +46,12 @@ let passCounter:number;
 let roundOn:boolean;
 let gameOn:boolean;
 let turnDelay:number;
+let roundCounter:number;
 
 // --------------------------------------------------- private methods
 function startGame():void {
     gameOn = true;
+    roundCounter = 0;
 
     // hard reset all possible players for new game (despite whether will be in game or not)
     humanPlayer.hardReset();
@@ -62,22 +65,21 @@ function startGame():void {
 
     // new game - deal the cards before starting the round
     table.dealCards();
+    // // on new game, randomly pick who goes first
+    // turnIndex = randomMe(0, players.length - 1);
     startRound();
 }
 
 function startRound():void {
     roundOn = true;            
     passCounter = 0;
-    // turnIndex = 0;
+    turnIndex = 0;
     turnPhase = 1;
     playType = Player.PLAYED_NONE;
     turnDelay = TURN_DELAY_DEFAULT;
 
     // soft reset all players for new round
     players.forEach(player => player.softReset()); 
-
-    // when game first starts, randomly pick who goes first
-    turnIndex = randomMe(0, players.length - 1);
 
     table.currentPlayer = players[turnIndex];
     table.showMe();
@@ -98,13 +100,14 @@ function processCards():void {
 
     // has the current player won the round by dropping a two OR everyone passing on last turn?
     if (playType == Player.PLAYED_TWO) {
-        console.log("=> CLEARED WITH TWO");
+        console.log("=> 👍 CLEARED WITH TWO");
         table.clearTable();
         passCounter = 0;
     } else if (playType == Player.PLAYED_PASS) {
-        console.log("=> PASSED!");
+        console.log("=> ❌ PASSED!");
         table.showPass();
         passCounter++;
+        createjs.Sound.play("pass");
     }
     
     // move index to next player (or find next player that is still in the game) as long as no two dropped
@@ -128,11 +131,9 @@ function onTurn() {
         table.currentPlayer = players[turnIndex];
         table.hidePass();
         table.showTurnMarker();
-
         // first clear table if player won by all others passing
-        // if (passCounter == (players.length - 1)) {
-        if (passCounter == players.length) {
-            console.log("=> CLEARED WITH PASS");
+        if (passCounter >= (table.playersInRoundCount - 1)) {
+            console.log("=> 👍 CLEARED WITH PASS");
             table.clearTable();
             passCounter = 0;
         }
@@ -149,6 +150,7 @@ function onTurn() {
             players[turnIndex].selectCards();
             table.refreshCards();
             playType = table.playCards();
+            if (playType != Player.PLAYED_PASS) createjs.Sound.play("playCard");
         } 
         turnPhase++;
     } else {
@@ -168,6 +170,8 @@ function onGameEvent(e:createjs.Event):void {
             break;
         case "startGameFor3":
             playerCount = 3;
+            startGame();
+            break;
         case "startGameFor4":
             playerCount = 4;
             startGame();
@@ -177,11 +181,12 @@ function onGameEvent(e:createjs.Event):void {
             players[turnIndex].selectCards();
             table.refreshCards();
             playType = table.playCards();
-            table.showTurnMarker();
-            processCards();
             turnPhase = 1;
             // start up turn timer again since was paused for human to take turn
             if (roundOn) {
+                processCards();
+                if (playType != Player.PLAYED_PASS) createjs.Sound.play("playCard");
+                table.showTurnMarker();
                 console.log("=> UNPAUSING FOR HUMAN");
                 turnTimer = window.setInterval(onTurn, turnDelay);
             }
@@ -192,10 +197,13 @@ function onGameEvent(e:createjs.Event):void {
             break;
         case "showSummaryScreen":
             roundOn = false;
+            roundCounter++;
             window.clearInterval(turnTimer);
             gameOn = table.roundWrapup();
+            table.hideTurnMarker();
             table.hideMe();
             screenManager.showSummary(players, gameOn);
+            createjs.Sound.play("roundOver");
             break;
         case "showSwapScreen":
             table.reset();
@@ -205,8 +213,8 @@ function onGameEvent(e:createjs.Event):void {
                 humanPlayer.startSwapSelection();            
                 // show turn marker on human player
                 table.currentPlayer = humanPlayer;            
-                table.showTurnMarker();
             }
+            table.showTurnMarker(false);
             screenManager.showCardSwap(humanPlayer);
             break;
         case "startAnotherRound":
@@ -217,7 +225,8 @@ function onGameEvent(e:createjs.Event):void {
         case "showGameOver":
             table.hideTurnMarker();
             let winner:Player = players.find(player => player.score >= WIN_SCORE);
-            screenManager.showGameOver(winner);
+            screenManager.showGameOver(winner, roundCounter);
+            createjs.Sound.play("gameOver");
             break;
     }
 }

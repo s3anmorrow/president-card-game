@@ -106,6 +106,7 @@ export default class HumanPlayer extends Player {
                             if (card.state != Card.STATE_SELECTED) card.disableMe();
                         });  
                     }
+                    createjs.Sound.play("select");
                     break;
                 case "cardDeselected":
                     // how many cards are selected?
@@ -116,6 +117,7 @@ export default class HumanPlayer extends Player {
                             }
                         });
                     }
+                    createjs.Sound.play("deselect");
                     break;
             }
 
@@ -136,12 +138,14 @@ export default class HumanPlayer extends Player {
                     this._hand.forEach(card => {
                         if ((card.state != Card.STATE_SELECTED) && (card.rank != rank)) card.disableMe();
                     });
+                    createjs.Sound.play("select");
                     break;
                 case "cardDeselected":
                     // are all cards unselected?
                     if (this._hand.find(card => card.state == Card.STATE_SELECTED) == undefined) {
                         this._hand.forEach(card => card.enableMe());
                     }
+                    createjs.Sound.play("deselect");
                     break;
             }
 

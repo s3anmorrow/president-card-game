@@ -55,7 +55,7 @@ export default class ScreenManager {
         // intro screen initialization
         this.introScreen = new createjs.Container(); 
         this.introScreen.x = 125;
-        this.introScreen.y = 138;   
+        this.introScreen.y = 128;   
         this.introScreen.addChild(assetManager.getSprite("sprites", "screens/intro", 0, 0));     
         let btnThreePlayers:createjs.Sprite = this.assetManager.getSprite("sprites","screens/btnThreePlayers",55,165);
         btnThreePlayers.on("mouseover", this.onOver, this);
@@ -70,9 +70,9 @@ export default class ScreenManager {
 
         // game screen initialization
         this.gameScreen = new createjs.Container();
-        this.gameScreen.addChild(assetManager.getSprite("sprites","screens/tableLabel1",400,145));
-        this.gameScreen.addChild(assetManager.getSprite("sprites","screens/tableLabel2",400,354));
-        this.gameScreen.addChild(assetManager.getSprite("sprites","screens/tableLabel3",400,376));  
+        this.gameScreen.addChild(assetManager.getSprite("sprites","screens/tableLabel1",400,135));
+        this.gameScreen.addChild(assetManager.getSprite("sprites","screens/tableLabel2",400,344));
+        this.gameScreen.addChild(assetManager.getSprite("sprites","screens/tableLabel3",400,366));  
 
         // summary screen initialization
         this.summaryScreen = new createjs.Container();
@@ -173,6 +173,7 @@ export default class ScreenManager {
 
     public showCardSwap(humanPlayer:HumanPlayer):void {
         this.state = ScreenManager.STATE_SWAP;
+        this.selectionCount = 0;
         this.hideAll();
 
         // does the human player have to select cards to swap?
@@ -192,11 +193,11 @@ export default class ScreenManager {
         this.stage.addChildAt(this.swapScreen, 1);
     }
 
-    public showGameOver(winner:Player):void {
+    public showGameOver(winner:Player, roundCounter:number):void {
         this.state = ScreenManager.STATE_GAME_OVER;
         this.hideAll();
         this.winnerPrompt.gotoAndStop("screens/gameOver" + winner.name);
-        this.txtRounds.text = "123";
+        this.txtRounds.text = roundCounter.toString();
         this.stage.addChildAt(this.gameOverScreen, 1);
     }
 
@@ -211,15 +212,9 @@ export default class ScreenManager {
     }     
 
     // -------------------------------------------------- event handlers
-    private onSwapSelection(e:createjs.Event):void {
-        if (this.humanPlayer.selectedCards.length != this.selectionCount) {
-
-            // ????????????
-            console.log("DENIED!");
-
-        } else {
-            this.closeScreen(this.eventStartAnotherRound);
-        }
+    private onSwapSelection(e:createjs.Event):void {       
+        if (this.humanPlayer.selectedCards.length != this.selectionCount) createjs.Sound.play("error");
+        else this.closeScreen(this.eventStartAnotherRound);
     }
 
     private onOver(e:createjs.Event):void {
@@ -251,7 +246,8 @@ export default class ScreenManager {
         this.hideAll();
         this.cursor.gotoAndStop("cursors/checkmark");
         this.selectionCount = 0;
-        this.stage.dispatchEvent(event);        
+        this.stage.dispatchEvent(event);
+        createjs.Sound.play("ui");
     }
 
     private hideAll():void {

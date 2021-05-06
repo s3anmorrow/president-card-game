@@ -10,9 +10,10 @@ export default class Table {
     private statusCounter:number;
     private statusRankings:number[];
     private passIndicator:createjs.Sprite;    
-    private playersInRound:number
     private players:Player[];
-
+    private playerName:createjs.Sprite;
+    
+    private _playersInRoundCount:number
     private _currentPlayer:Player;
     private _playedCards:Card[];
     private _playSpot:createjs.Container;
@@ -26,16 +27,18 @@ export default class Table {
         this._playedCards = [];
         this.players = [];
         this.statusCounter = 0;
-        this.playersInRound = 0;
+        this._playersInRoundCount = 0;
 
         // playspot where players drop cards
         this._playSpot = new createjs.Container();
         this._playSpot.x = 291;
-        this._playSpot.y = 168;
+        this._playSpot.y = 158;
         this._playSpot.addChild(assetManager.getSprite("sprites", "screens/playSpot", 0, 0));
 
         // construct passIndicator sprite for showing computer passed
         this.passIndicator = assetManager.getSprite("sprites", "cursors/pass", 109, 83);
+        // player's name who is taking a turn
+        this.playerName = assetManager.getSprite("sprites", "screens/turnYou", 400, 415);
 
         this.eventRoundOver = new createjs.Event("showSummaryScreen", true, false);
         this.eventHumanOut = new createjs.Event("humanOut", true, false);
@@ -58,21 +61,17 @@ export default class Table {
         return this._playedCards;
     }
 
-    // -------------------------------------------- public methods
-    public reset():void {
-        this.hidePass();
-        this.clearTable();
-        this.playersInRound = this.players.length;
-        this.statusCounter = 0;
-        this._playedCards = [];
+    public get playersInRoundCount():number {
+        return this._playersInRoundCount;
     }
 
+    // -------------------------------------------- public methods
     public setup(...players:Player[]):Player[] {
         this.players = players;
         
         // set possible status rankings for number of players
         if (this.players.length == 4) this.statusRankings = [2,1,-1,-2];
-        else this.statusRankings = [1,0,-1];
+        else this.statusRankings = [2,0,-2];
         
         // initialization of Computer Players
         if (this.players.length == 3) {           
@@ -110,6 +109,23 @@ export default class Table {
     public showMe():void {
         this.stage.addChildAt(this.playSpot,1);
     }
+
+    public showTurnMarker(label:boolean = true):void {
+        // hide all turn markers for all players
+        this.players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
+        // show current player's turn markers
+        this._currentPlayer.hand.forEach(card => card.showTurnMarker())
+        // display player name for current turn
+        if (label) {
+            this.playerName.gotoAndStop("screens/turn" + this._currentPlayer.name);
+            this.stage.addChild(this.playerName);
+        }
+    }
+
+    public hideTurnMarker():void {
+        this.players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
+        this.stage.removeChild(this.playerName);
+    }    
 
     public dealCards():void {
         // all players return cards before dealing
@@ -192,7 +208,7 @@ export default class Table {
                 if (receiver instanceof HumanPlayer) card.showAddMarker();
             });
         });
-        
+
         // force refresh of table
         this.refreshCards();
 
@@ -229,11 +245,12 @@ export default class Table {
             this._currentPlayer.state = Player.STATE_OUT;
             this._currentPlayer.status = this.statusRankings[this.statusCounter];
             this.statusCounter++;
-            this.playersInRound--;
+            this._playersInRoundCount--;
+            createjs.Sound.play("playerOut");
             // is this player the human?
             if (this._currentPlayer instanceof HumanPlayer) this.stage.dispatchEvent(this.eventHumanOut);
             // is the round over?
-            if (this.playersInRound <= 1) this.stage.dispatchEvent(this.eventRoundOver);
+            if (this._playersInRoundCount <= 1) this.stage.dispatchEvent(this.eventRoundOver);
         }
 
         return playType;
@@ -242,9 +259,6 @@ export default class Table {
     public roundWrapup():boolean {
         // find which player is loser and turn cards face up
         let loser:Player = this.players.find(player => player.state != Player.STATE_OUT);
-        // highlight the loser on table
-        this.currentPlayer = loser;
-        this.showTurnMarker();
         // reveal his cards
         loser.revealCards();
         loser.status = this.statusRankings[this.statusCounter];
@@ -288,17 +302,6 @@ export default class Table {
 		return false;
 	}
 
-    public showTurnMarker():void {
-        // hide all turn markers for all players
-        this.players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
-        // show current player's turn markers
-        this._currentPlayer.hand.forEach(card => card.showTurnMarker())
-    }
-
-    public hideTurnMarker():void {
-        this.players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
-    }
-
     public refreshCards():void {
         let dropSpotX:number;
         let dropSpotY:number;
@@ -317,16 +320,16 @@ export default class Table {
             // calculating card x drop spot so all cards are centered on stage
             if (player.orientation == Player.ORIENTATION_LEFT) {
                 dropSpotX = 80;
-                dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
+                dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2) - 30;
             } else if (player.orientation == Player.ORIENTATION_RIGHT) {
-                dropSpotX = 850;
-                dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
+                dropSpotX = 855;
+                dropSpotY = Math.floor((STAGE_HEIGHT - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2) - 30;
             } else if (player.orientation == Player.ORIENTATION_TOP) {
                 dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * COMPUTER_CARD_SPREAD) + 99))/2);
-                dropSpotY = -50;
+                dropSpotY = -55;
             } else {
                 dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * PLAYER_CARD_SPREAD) + 99))/2);
-                dropSpotY = 440;
+                dropSpotY = 445;
             }
 
             // placing cards onto table
@@ -348,5 +351,13 @@ export default class Table {
                 }
             });
         });
+    }
+
+    public reset():void {
+        this.hidePass();
+        this.clearTable();
+        this._playersInRoundCount = this.players.length;
+        this.statusCounter = 0;
+        this._playedCards = [];
     }
 }
