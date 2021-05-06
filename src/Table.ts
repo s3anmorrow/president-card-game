@@ -11,9 +11,9 @@ export default class Table {
     private statusRankings:number[];
     private passIndicator:createjs.Sprite;    
     private playersInRound:number
+    private players:Player[];
 
     private _currentPlayer:Player;
-    private _players:Player[];
     private _playedCards:Card[];
     private _playSpot:createjs.Container;
 
@@ -24,7 +24,7 @@ export default class Table {
         // initialization
         this.stage = stage;
         this._playedCards = [];
-        this._players = [];
+        this.players = [];
         this.statusCounter = 0;
         this.playersInRound = 0;
 
@@ -44,7 +44,7 @@ export default class Table {
     // -------------------------------------------- gets/sets
     // the player object who is currently taking a turn
     public set currentPlayer(value:Player) {
-        this._currentPlayer = value;
+        this._currentPlayer = value; 
     }
     public get currentPlayer():Player {
         return this._currentPlayer;
@@ -58,38 +58,36 @@ export default class Table {
         return this._playedCards;
     }
 
-    public get players():Player[] {
-        return this._players;
-    }
-
     // -------------------------------------------- public methods
     public reset():void {
         this.hidePass();
         this.clearTable();
-        this.playersInRound = this._players.length;
+        this.playersInRound = this.players.length;
         this.statusCounter = 0;
         this._playedCards = [];
     }
 
-    public setup(...players:Player[]):void {
-        this._players = players;
+    public setup(...players:Player[]):Player[] {
+        this.players = players;
         
         // set possible status rankings for number of players
-        if (this._players.length == 4) this.statusRankings = [2,1,-1,-2];
+        if (this.players.length == 4) this.statusRankings = [2,1,-1,-2];
         else this.statusRankings = [1,0,-1];
         
         // initialization of Computer Players
-        if (this._players.length == 3) {           
-            this._players[1].orientation = Player.ORIENTATION_LEFT;
-            this._players[2].orientation = Player.ORIENTATION_RIGHT;
+        if (this.players.length == 3) {           
+            this.players[1].orientation = Player.ORIENTATION_LEFT;
+            this.players[2].orientation = Player.ORIENTATION_RIGHT;
         } else {
-            this._players[1].orientation = Player.ORIENTATION_LEFT;
-            this._players[2].orientation = Player.ORIENTATION_TOP;
-            this._players[3].orientation = Player.ORIENTATION_RIGHT;
+            this.players[1].orientation = Player.ORIENTATION_LEFT;
+            this.players[2].orientation = Player.ORIENTATION_TOP;
+            this.players[3].orientation = Player.ORIENTATION_RIGHT;
         }
         
         // reset table
         this.reset();
+
+        return this.players;
     }
 
     public clearTable():void {
@@ -115,12 +113,12 @@ export default class Table {
 
     public dealCards():void {
         // all players return cards before dealing
-        this._players.forEach(player => player.returnCards()); 
+        this.players.forEach(player => player.returnCards()); 
 
         // deal cards to all players
         while (true) {
             let finished:boolean;
-            this._players.forEach(player => finished = player.dealCard());
+            this.players.forEach(player => finished = player.dealCard());
             if (finished) break;
         }
         this.refreshCards();
@@ -128,7 +126,7 @@ export default class Table {
 
     public unloadHumanCards():void {
         // find human player (donor)
-        let donor:Player = this._players.find(player => player instanceof HumanPlayer);
+        let donor:Player = this.players.find(player => player instanceof HumanPlayer);
 
         // any cards to unload?
         if (donor.selectedCards.length == 0) return;
@@ -136,9 +134,9 @@ export default class Table {
         let receiver:Player;
         // find targetted computer player (receiver)
         if (donor.status == Player.STATUS_PRES) {
-            receiver = this._players.find(player => player.status == Player.STATUS_AHOLE);
+            receiver = this.players.find(player => player.status == Player.STATUS_AHOLE);
         } else if (donor.status == Player.STATUS_VICE_PRES) {
-            receiver = this._players.find(player => player.status == Player.STATUS_VICE_AHOLE);
+            receiver = this.players.find(player => player.status == Player.STATUS_VICE_AHOLE);
         }
         // move cards from donor to receiver
         donor.selectedCards.forEach(card => {
@@ -153,24 +151,12 @@ export default class Table {
         let cardsToSwap:Card[];
         let selectionReq:boolean = false;
 
-        console.log("---------------------------------- BEFORE");
-        console.log("AHole's HAND");
-        console.table(this._players.find(player => player.status == -2).hand);
-        console.log("Vice AHole's HAND");
-        console.table(this._players.find(player => player.status == -1).hand);
-        console.log("Vice Pres's HAND");
-        console.table(this._players.find(player => player.status == 1).hand);
-        console.log("Pres's HAND");
-        console.table(this._players.find(player => player.status == 2).hand);
-        console.log("-----------------------------------------");
-
-
-        this._players.forEach(receiver => {
+        this.players.forEach(receiver => {
              cardsToSwap = [];
  
             if (receiver.status == Player.STATUS_PRES) {
                 // president - find asshole and get his best 2 cards
-                donor = this._players.find(player => player.status == Player.STATUS_AHOLE);
+                donor = this.players.find(player => player.status == Player.STATUS_AHOLE);
                 // isolate twos and all other cards (reversed!)
                 let twos:Card[] = donor.hand.filter(card => card.rank == 2);
                 let others:Card[] = donor.hand.filter(card => card.rank >= 3).reverse();
@@ -179,7 +165,7 @@ export default class Table {
 
             } else if (receiver.status == Player.STATUS_VICE_PRES) {
                 // vice-president - find vice asshole and get his best 1 card
-                donor = this._players.find(player => player.status == Player.STATUS_VICE_AHOLE);
+                donor = this.players.find(player => player.status == Player.STATUS_VICE_AHOLE);
                 let twos:Card[] = donor.hand.filter(card => card.rank == 2);
                 let others:Card[] = donor.hand.filter(card => card.rank >= 3).reverse();
                 cardsToSwap = [...twos, ...others].splice(0, 1);
@@ -188,12 +174,12 @@ export default class Table {
                 // neutral - no swap
             } else if (receiver.status == Player.STATUS_VICE_AHOLE) {
                 // vice-ahole - find vice-pres and get worst card - only if vice-pres is a computer
-                donor = this._players.find(player => player.status == Player.STATUS_VICE_PRES);
+                donor = this.players.find(player => player.status == Player.STATUS_VICE_PRES);
                 if (donor instanceof ComputerPlayer) cardsToSwap = donor.hand.filter(card => card.rank >= 3).splice(0, 1);
                 else selectionReq = true;
             } else if (receiver.status == Player.STATUS_AHOLE) {
                 // ahole - find president and get his worst 2 cards - only do swap if prez is a computer
-                donor = this._players.find(player => player.status == Player.STATUS_PRES);
+                donor = this.players.find(player => player.status == Player.STATUS_PRES);
                 if (donor instanceof ComputerPlayer) cardsToSwap = donor.hand.filter(card => card.rank >= 3).splice(0, 2);
                 else selectionReq = true;
             }
@@ -206,19 +192,7 @@ export default class Table {
                 if (receiver instanceof HumanPlayer) card.showAddMarker();
             });
         });
-
-        console.log("---------------------------------- AFTER");
-        console.log("AHole's HAND");
-        console.table(this._players.find(player => player.status == -2).hand);
-        console.log("Vice AHole's HAND");
-        console.table(this._players.find(player => player.status == -1).hand);
-        console.log("Vice Pres's HAND");
-        console.table(this._players.find(player => player.status == 1).hand);
-        console.log("Pres's HAND");
-        console.table(this._players.find(player => player.status == 2).hand);
-        console.log("-----------------------------------------");
-
-
+        
         // force refresh of table
         this.refreshCards();
 
@@ -256,9 +230,6 @@ export default class Table {
             this._currentPlayer.status = this.statusRankings[this.statusCounter];
             this.statusCounter++;
             this.playersInRound--;
-
-            console.log("*** PLAYER OUT with status " + this._currentPlayer.status + " : number left " + this.playersInRound);
-
             // is this player the human?
             if (this._currentPlayer instanceof HumanPlayer) this.stage.dispatchEvent(this.eventHumanOut);
             // is the round over?
@@ -270,7 +241,7 @@ export default class Table {
 
     public roundWrapup():boolean {
         // find which player is loser and turn cards face up
-        let loser:Player = this._players.find(player => player.state != Player.STATE_OUT);
+        let loser:Player = this.players.find(player => player.state != Player.STATE_OUT);
         // highlight the loser on table
         this.currentPlayer = loser;
         this.showTurnMarker();
@@ -279,26 +250,26 @@ export default class Table {
         loser.status = this.statusRankings[this.statusCounter];
         
         // sort players in order of status for next round
-        this._players.sort((a:Player, b:Player) => {
+        this.players.sort((a:Player, b:Player) => {
             if (a.status > b.status) return -1;
             else if (a.status < b.status) return 1;
             else return 0;
         });
 
         // update orientation of players to match status order
-        let maxIndex:number = this._players.length - 1;
-        let index:number = this._players.findIndex(player => player instanceof HumanPlayer);
+        let maxIndex:number = this.players.length - 1;
+        let index:number = this.players.findIndex(player => player instanceof HumanPlayer);
         for (let orientCounter:number=1; orientCounter<=4; orientCounter++) {
-            if ((this._players.length == 3) && (orientCounter == 3)) orientCounter = 4;
-            this._players[index].orientation = orientCounter;
+            if ((this.players.length == 3) && (orientCounter == 3)) orientCounter = 4;
+            this.players[index].orientation = orientCounter;
             index++;
             if (index > maxIndex) index = 0;
         }
 
         // update score for each player according to status
-        this._players.forEach(player => player.updateScore());
+        this.players.forEach(player => player.updateScore());
         // has a player won?
-        if (this._players.some(player => player.score >= WIN_SCORE)) return false;
+        if (this.players.some(player => player.score >= WIN_SCORE)) return false;
         return true;
     }
 
@@ -319,13 +290,13 @@ export default class Table {
 
     public showTurnMarker():void {
         // hide all turn markers for all players
-        this._players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
+        this.players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
         // show current player's turn markers
         this._currentPlayer.hand.forEach(card => card.showTurnMarker())
     }
 
     public hideTurnMarker():void {
-        this._players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
+        this.players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
     }
 
     public refreshCards():void {
@@ -333,7 +304,7 @@ export default class Table {
         let dropSpotY:number;
         let cards:Card[];
 
-        for (let player of this._players) {
+        this.players.forEach(player => {
             cards = player.hand;
 
             // sort cards
@@ -357,8 +328,9 @@ export default class Table {
                 dropSpotX = Math.floor((STAGE_WIDTH - (((cards.length - 1) * PLAYER_CARD_SPREAD) + 99))/2);
                 dropSpotY = 440;
             }
+
             // placing cards onto table
-            for (let card of cards) {
+            cards.forEach(card => {
                 card.positionMe(dropSpotX, dropSpotY);
                 card.disableMe();
                 if ((player.orientation == Player.ORIENTATION_LEFT) || (player.orientation == Player.ORIENTATION_RIGHT)) {
@@ -374,7 +346,7 @@ export default class Table {
                     card.showFaceUp();
                     dropSpotX = dropSpotX + PLAYER_CARD_SPREAD;
                 }
-            }
-        }
+            });
+        });
     }
 }

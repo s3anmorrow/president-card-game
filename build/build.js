@@ -10430,13 +10430,13 @@ exports.default = ComputerPlayer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ASSET_MANIFEST = exports.WIN_SCORE = exports.TURN_DELAY = exports.COMPUTER_CARD_SPREAD = exports.PLAYER_CARD_SPREAD = exports.FRAME_RATE = exports.STAGE_HEIGHT = exports.STAGE_WIDTH = void 0;
+exports.ASSET_MANIFEST = exports.WIN_SCORE = exports.TURN_DELAY_DEFAULT = exports.COMPUTER_CARD_SPREAD = exports.PLAYER_CARD_SPREAD = exports.FRAME_RATE = exports.STAGE_HEIGHT = exports.STAGE_WIDTH = void 0;
 exports.STAGE_WIDTH = 800;
 exports.STAGE_HEIGHT = 600;
 exports.FRAME_RATE = 30;
 exports.PLAYER_CARD_SPREAD = 33;
 exports.COMPUTER_CARD_SPREAD = 20;
-exports.TURN_DELAY = 200;
+exports.TURN_DELAY_DEFAULT = 200;
 exports.WIN_SCORE = 10;
 exports.ASSET_MANIFEST = [
     {
@@ -10479,6 +10479,7 @@ exports.ASSET_MANIFEST = [
 
 Object.defineProperty(exports, "__esModule", { value: true });
 __webpack_require__(/*! createjs */ "./node_modules/createjs/builds/1.0.0/createjs.min.js");
+const Toolkit_1 = __webpack_require__(/*! ./Toolkit */ "./src/Toolkit.ts");
 const Constants_1 = __webpack_require__(/*! ./Constants */ "./src/Constants.ts");
 const AssetManager_1 = __webpack_require__(/*! ./AssetManager */ "./src/AssetManager.ts");
 const ScreenManager_1 = __webpack_require__(/*! ./ScreenManager */ "./src/ScreenManager.ts");
@@ -10498,7 +10499,7 @@ let computerPlayer2;
 let computerPlayer3;
 let players;
 let deck;
-let playerTotalCount = 4;
+let playerCount = 4;
 let turnIndex = 0;
 let turnTimer;
 let turnPhase;
@@ -10506,27 +10507,28 @@ let playType;
 let passCounter;
 let roundOn;
 let gameOn;
+let turnDelay;
 function startGame() {
     gameOn = true;
     humanPlayer.hardReset();
     computerPlayer1.hardReset();
     computerPlayer2.hardReset();
     computerPlayer3.hardReset();
-    if (playerTotalCount == 3)
-        table.setup(humanPlayer, computerPlayer1, computerPlayer2);
+    if (playerCount == 3)
+        players = table.setup(humanPlayer, computerPlayer1, computerPlayer2);
     else
-        table.setup(humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3);
-    players = table.players;
+        players = table.setup(humanPlayer, computerPlayer1, computerPlayer2, computerPlayer3);
     table.dealCards();
     startRound();
 }
 function startRound() {
     roundOn = true;
     passCounter = 0;
-    turnIndex = 0;
     turnPhase = 1;
     playType = Player_1.default.PLAYED_NONE;
+    turnDelay = Constants_1.TURN_DELAY_DEFAULT;
     players.forEach(player => player.softReset());
+    turnIndex = Toolkit_1.randomMe(0, players.length - 1);
     table.currentPlayer = players[turnIndex];
     table.showMe();
     screenManager.showGame();
@@ -10535,7 +10537,7 @@ function startRound() {
         humanPlayer.enableMe();
     }
     else {
-        turnTimer = window.setInterval(onTurn, Constants_1.TURN_DELAY);
+        turnTimer = window.setInterval(onTurn, turnDelay);
         humanPlayer.disableMe();
     }
 }
@@ -10553,10 +10555,10 @@ function processCards() {
         passCounter++;
     }
     if ((playType != Player_1.default.PLAYED_TWO) || (players[turnIndex].state == Player_1.default.STATE_OUT)) {
-        if (++turnIndex == playerTotalCount)
+        if (++turnIndex == playerCount)
             turnIndex = 0;
         while (players[turnIndex].state == Player_1.default.STATE_OUT) {
-            if (++turnIndex == playerTotalCount)
+            if (++turnIndex == playerCount)
                 turnIndex = 0;
         }
     }
@@ -10569,7 +10571,7 @@ function onTurn() {
         table.currentPlayer = players[turnIndex];
         table.hidePass();
         table.showTurnMarker();
-        if (passCounter == (players.length - 1)) {
+        if (passCounter == players.length) {
             console.log("=> CLEARED WITH PASS");
             table.clearTable();
             passCounter = 0;
@@ -10603,9 +10605,9 @@ function onGameEvent(e) {
             screenManager.showIntro();
             break;
         case "startGameFor3":
-            playerTotalCount = 3;
+            playerCount = 3;
         case "startGameFor4":
-            playerTotalCount = 4;
+            playerCount = 4;
             startGame();
             break;
         case "cardsSelected":
@@ -10618,10 +10620,11 @@ function onGameEvent(e) {
             turnPhase = 1;
             if (roundOn) {
                 console.log("=> UNPAUSING FOR HUMAN");
-                turnTimer = window.setInterval(onTurn, Constants_1.TURN_DELAY);
+                turnTimer = window.setInterval(onTurn, turnDelay);
             }
             break;
         case "humanOut":
+            turnDelay = turnDelay / 2;
             break;
         case "showSummaryScreen":
             roundOn = false;
@@ -10631,7 +10634,6 @@ function onGameEvent(e) {
             screenManager.showSummary(players, gameOn);
             break;
         case "showSwapScreen":
-            console.log("CARD SWAP");
             table.reset();
             table.dealCards();
             if (table.swapCards()) {
@@ -10642,13 +10644,10 @@ function onGameEvent(e) {
             screenManager.showCardSwap(humanPlayer);
             break;
         case "startAnotherRound":
-            console.log("NEW ROUND");
-            console.log("Cards to get rid of:");
-            console.log(humanPlayer.selectedCards);
             table.unloadHumanCards();
             startRound();
             break;
-        case "gameOver":
+        case "showGameOver":
             table.hideTurnMarker();
             let winner = players.find(player => player.score >= Constants_1.WIN_SCORE);
             screenManager.showGameOver(winner);
@@ -10660,11 +10659,8 @@ function onReady(e) {
     screenManager = new ScreenManager_1.default(stage, assetManager);
     table = new Table_1.default(stage, assetManager);
     deck = [];
-    for (let n = 2; n <= 14; n++) {
+    for (let n = 2; n <= 13; n++) {
         deck.push(new Card_1.default(stage, assetManager, table, "C", n));
-        deck.push(new Card_1.default(stage, assetManager, table, "H", n));
-        deck.push(new Card_1.default(stage, assetManager, table, "D", n));
-        deck.push(new Card_1.default(stage, assetManager, table, "S", n));
     }
     humanPlayer = new HumanPlayer_1.default("You", stage, assetManager, deck, table);
     computerPlayer1 = new ComputerPlayer_1.default("Shifty", stage, assetManager, deck, humanPlayer, table);
@@ -10676,7 +10672,7 @@ function onReady(e) {
     stage.on("showSummaryScreen", onGameEvent);
     stage.on("showSwapScreen", onGameEvent);
     stage.on("startAnotherRound", onGameEvent);
-    stage.on("gameOver", onGameEvent);
+    stage.on("showGameOver", onGameEvent);
     stage.on("humanOut", onGameEvent);
     stage.on("cardsSelected", onGameEvent);
     stage.dispatchEvent(new createjs.Event("showIntroScreen", true, false));
@@ -10992,15 +10988,19 @@ class ScreenManager {
         background.scaleX = Constants_1.STAGE_WIDTH;
         background.scaleY = Constants_1.STAGE_HEIGHT;
         stage.addChild(background);
+        stage.addChild(assetManager.getSprite("sprites", "screens/corner", 0, 0));
+        stage.addChild(assetManager.getSprite("sprites", "screens/corner", Constants_1.STAGE_WIDTH - 6, 0));
+        stage.addChild(assetManager.getSprite("sprites", "screens/corner", 0, Constants_1.STAGE_HEIGHT - 6));
+        stage.addChild(assetManager.getSprite("sprites", "screens/corner", Constants_1.STAGE_WIDTH - 6, Constants_1.STAGE_HEIGHT - 6));
         this.cursor = assetManager.getSprite("sprites", "cursors/checkmark", 0, 0);
         this.introScreen = new createjs.Container();
         this.introScreen.x = 125;
-        this.introScreen.y = 114;
+        this.introScreen.y = 138;
         this.introScreen.addChild(assetManager.getSprite("sprites", "screens/intro", 0, 0));
-        let btnThreePlayers = this.assetManager.getSprite("sprites", "screens/btnThreePlayers", 55, 190);
+        let btnThreePlayers = this.assetManager.getSprite("sprites", "screens/btnThreePlayers", 55, 165);
         btnThreePlayers.on("mouseover", this.onOver, this);
         btnThreePlayers.on("mouseout", this.onOut, this);
-        let btnFourPlayers = this.assetManager.getSprite("sprites", "screens/btnFourPlayers", 55, 250);
+        let btnFourPlayers = this.assetManager.getSprite("sprites", "screens/btnFourPlayers", 55, 225);
         btnFourPlayers.on("mouseover", this.onOver, this);
         btnFourPlayers.on("mouseout", this.onOut, this);
         this.introScreen.addChild(btnThreePlayers);
@@ -11048,12 +11048,12 @@ class ScreenManager {
         btnMenu.on("mouseout", this.onOut, this);
         btnMenu.on("click", (e) => this.closeScreen(this.eventShowIntroScreen), this);
         this.gameOverScreen.addChild(btnMenu);
+        this.eventShowIntroScreen = new createjs.Event("showIntroScreen", true, false);
         this.eventShowSwapScreen = new createjs.Event("showSwapScreen", true, false);
         this.eventStartAnotherRound = new createjs.Event("startAnotherRound", true, false);
         this.eventStartGameFor3 = new createjs.Event("startGameFor3", true, false);
         this.eventStartGameFor4 = new createjs.Event("startGameFor4", true, false);
-        this.eventGameOver = new createjs.Event("gameOver", true, false);
-        this.eventShowIntroScreen = new createjs.Event("showIntroScreen", true, false);
+        this.eventShowGameOver = new createjs.Event("showGameOver", true, false);
     }
     showIntro() {
         this.state = ScreenManager.STATE_INTRO;
@@ -11093,7 +11093,7 @@ class ScreenManager {
         if (gameOn)
             this.summaryScreen.on("click", (e) => this.closeScreen(this.eventShowSwapScreen), this, true);
         else
-            this.summaryScreen.on("click", (e) => this.closeScreen(this.eventGameOver), this, true);
+            this.summaryScreen.on("click", (e) => this.closeScreen(this.eventShowGameOver), this, true);
     }
     showCardSwap(humanPlayer) {
         this.state = ScreenManager.STATE_SWAP;
@@ -11144,6 +11144,7 @@ class ScreenManager {
         this.introScreen.cursor = "none";
         this.summaryScreen.cursor = "none";
         this.swapScreen.cursor = "none";
+        this.gameOverScreen.cursor = "none";
         this.cursor.x = this.stage.mouseX;
         this.cursor.y = this.stage.mouseY;
         this.stage.addChild(this.cursor);
@@ -11152,6 +11153,7 @@ class ScreenManager {
         this.introScreen.cursor = "default";
         this.summaryScreen.cursor = "default";
         this.swapScreen.cursor = "default";
+        this.gameOverScreen.cursor = "default";
         this.stage.removeChild(this.cursor);
     }
     closeScreen(event) {
@@ -11200,7 +11202,7 @@ class Table {
     constructor(stage, assetManager) {
         this.stage = stage;
         this._playedCards = [];
-        this._players = [];
+        this.players = [];
         this.statusCounter = 0;
         this.playersInRound = 0;
         this._playSpot = new createjs.Container();
@@ -11223,32 +11225,30 @@ class Table {
     get playedCards() {
         return this._playedCards;
     }
-    get players() {
-        return this._players;
-    }
     reset() {
         this.hidePass();
         this.clearTable();
-        this.playersInRound = this._players.length;
+        this.playersInRound = this.players.length;
         this.statusCounter = 0;
         this._playedCards = [];
     }
     setup(...players) {
-        this._players = players;
-        if (this._players.length == 4)
+        this.players = players;
+        if (this.players.length == 4)
             this.statusRankings = [2, 1, -1, -2];
         else
             this.statusRankings = [1, 0, -1];
-        if (this._players.length == 3) {
-            this._players[1].orientation = Player_1.default.ORIENTATION_LEFT;
-            this._players[2].orientation = Player_1.default.ORIENTATION_RIGHT;
+        if (this.players.length == 3) {
+            this.players[1].orientation = Player_1.default.ORIENTATION_LEFT;
+            this.players[2].orientation = Player_1.default.ORIENTATION_RIGHT;
         }
         else {
-            this._players[1].orientation = Player_1.default.ORIENTATION_LEFT;
-            this._players[2].orientation = Player_1.default.ORIENTATION_TOP;
-            this._players[3].orientation = Player_1.default.ORIENTATION_RIGHT;
+            this.players[1].orientation = Player_1.default.ORIENTATION_LEFT;
+            this.players[2].orientation = Player_1.default.ORIENTATION_TOP;
+            this.players[3].orientation = Player_1.default.ORIENTATION_RIGHT;
         }
         this.reset();
+        return this.players;
     }
     clearTable() {
         this._playedCards.forEach(card => card.hideMe());
@@ -11268,25 +11268,25 @@ class Table {
         this.stage.addChildAt(this.playSpot, 1);
     }
     dealCards() {
-        this._players.forEach(player => player.returnCards());
+        this.players.forEach(player => player.returnCards());
         while (true) {
             let finished;
-            this._players.forEach(player => finished = player.dealCard());
+            this.players.forEach(player => finished = player.dealCard());
             if (finished)
                 break;
         }
         this.refreshCards();
     }
     unloadHumanCards() {
-        let donor = this._players.find(player => player instanceof HumanPlayer_1.default);
+        let donor = this.players.find(player => player instanceof HumanPlayer_1.default);
         if (donor.selectedCards.length == 0)
             return;
         let receiver;
         if (donor.status == Player_1.default.STATUS_PRES) {
-            receiver = this._players.find(player => player.status == Player_1.default.STATUS_AHOLE);
+            receiver = this.players.find(player => player.status == Player_1.default.STATUS_AHOLE);
         }
         else if (donor.status == Player_1.default.STATUS_VICE_PRES) {
-            receiver = this._players.find(player => player.status == Player_1.default.STATUS_VICE_AHOLE);
+            receiver = this.players.find(player => player.status == Player_1.default.STATUS_VICE_AHOLE);
         }
         donor.selectedCards.forEach(card => {
             donor.hand.splice(donor.hand.findIndex(myCard => myCard == card), 1);
@@ -11298,26 +11298,16 @@ class Table {
         let donor;
         let cardsToSwap;
         let selectionReq = false;
-        console.log("---------------------------------- BEFORE");
-        console.log("AHole's HAND");
-        console.table(this._players.find(player => player.status == -2).hand);
-        console.log("Vice AHole's HAND");
-        console.table(this._players.find(player => player.status == -1).hand);
-        console.log("Vice Pres's HAND");
-        console.table(this._players.find(player => player.status == 1).hand);
-        console.log("Pres's HAND");
-        console.table(this._players.find(player => player.status == 2).hand);
-        console.log("-----------------------------------------");
-        this._players.forEach(receiver => {
+        this.players.forEach(receiver => {
             cardsToSwap = [];
             if (receiver.status == Player_1.default.STATUS_PRES) {
-                donor = this._players.find(player => player.status == Player_1.default.STATUS_AHOLE);
+                donor = this.players.find(player => player.status == Player_1.default.STATUS_AHOLE);
                 let twos = donor.hand.filter(card => card.rank == 2);
                 let others = donor.hand.filter(card => card.rank >= 3).reverse();
                 cardsToSwap = [...twos, ...others].splice(0, 2);
             }
             else if (receiver.status == Player_1.default.STATUS_VICE_PRES) {
-                donor = this._players.find(player => player.status == Player_1.default.STATUS_VICE_AHOLE);
+                donor = this.players.find(player => player.status == Player_1.default.STATUS_VICE_AHOLE);
                 let twos = donor.hand.filter(card => card.rank == 2);
                 let others = donor.hand.filter(card => card.rank >= 3).reverse();
                 cardsToSwap = [...twos, ...others].splice(0, 1);
@@ -11325,14 +11315,14 @@ class Table {
             else if (receiver.status == Player_1.default.STATUS_NEUTRAL) {
             }
             else if (receiver.status == Player_1.default.STATUS_VICE_AHOLE) {
-                donor = this._players.find(player => player.status == Player_1.default.STATUS_VICE_PRES);
+                donor = this.players.find(player => player.status == Player_1.default.STATUS_VICE_PRES);
                 if (donor instanceof ComputerPlayer_1.default)
                     cardsToSwap = donor.hand.filter(card => card.rank >= 3).splice(0, 1);
                 else
                     selectionReq = true;
             }
             else if (receiver.status == Player_1.default.STATUS_AHOLE) {
-                donor = this._players.find(player => player.status == Player_1.default.STATUS_PRES);
+                donor = this.players.find(player => player.status == Player_1.default.STATUS_PRES);
                 if (donor instanceof ComputerPlayer_1.default)
                     cardsToSwap = donor.hand.filter(card => card.rank >= 3).splice(0, 2);
                 else
@@ -11345,16 +11335,6 @@ class Table {
                     card.showAddMarker();
             });
         });
-        console.log("---------------------------------- AFTER");
-        console.log("AHole's HAND");
-        console.table(this._players.find(player => player.status == -2).hand);
-        console.log("Vice AHole's HAND");
-        console.table(this._players.find(player => player.status == -1).hand);
-        console.log("Vice Pres's HAND");
-        console.table(this._players.find(player => player.status == 1).hand);
-        console.log("Pres's HAND");
-        console.table(this._players.find(player => player.status == 2).hand);
-        console.log("-----------------------------------------");
         this.refreshCards();
         return selectionReq;
     }
@@ -11380,7 +11360,6 @@ class Table {
             this._currentPlayer.status = this.statusRankings[this.statusCounter];
             this.statusCounter++;
             this.playersInRound--;
-            console.log("*** PLAYER OUT with status " + this._currentPlayer.status + " : number left " + this.playersInRound);
             if (this._currentPlayer instanceof HumanPlayer_1.default)
                 this.stage.dispatchEvent(this.eventHumanOut);
             if (this.playersInRound <= 1)
@@ -11389,12 +11368,12 @@ class Table {
         return playType;
     }
     roundWrapup() {
-        let loser = this._players.find(player => player.state != Player_1.default.STATE_OUT);
+        let loser = this.players.find(player => player.state != Player_1.default.STATE_OUT);
         this.currentPlayer = loser;
         this.showTurnMarker();
         loser.revealCards();
         loser.status = this.statusRankings[this.statusCounter];
-        this._players.sort((a, b) => {
+        this.players.sort((a, b) => {
             if (a.status > b.status)
                 return -1;
             else if (a.status < b.status)
@@ -11402,18 +11381,18 @@ class Table {
             else
                 return 0;
         });
-        let maxIndex = this._players.length - 1;
-        let index = this._players.findIndex(player => player instanceof HumanPlayer_1.default);
+        let maxIndex = this.players.length - 1;
+        let index = this.players.findIndex(player => player instanceof HumanPlayer_1.default);
         for (let orientCounter = 1; orientCounter <= 4; orientCounter++) {
-            if ((this._players.length == 3) && (orientCounter == 3))
+            if ((this.players.length == 3) && (orientCounter == 3))
                 orientCounter = 4;
-            this._players[index].orientation = orientCounter;
+            this.players[index].orientation = orientCounter;
             index++;
             if (index > maxIndex)
                 index = 0;
         }
-        this._players.forEach(player => player.updateScore());
-        if (this._players.some(player => player.score >= Constants_1.WIN_SCORE))
+        this.players.forEach(player => player.updateScore());
+        if (this.players.some(player => player.score >= Constants_1.WIN_SCORE))
             return false;
         return true;
     }
@@ -11429,17 +11408,17 @@ class Table {
         return false;
     }
     showTurnMarker() {
-        this._players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
+        this.players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
         this._currentPlayer.hand.forEach(card => card.showTurnMarker());
     }
     hideTurnMarker() {
-        this._players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
+        this.players.forEach(player => player.hand.forEach(card => card.hideTurnMarker()));
     }
     refreshCards() {
         let dropSpotX;
         let dropSpotY;
         let cards;
-        for (let player of this._players) {
+        this.players.forEach(player => {
             cards = player.hand;
             cards.sort((a, b) => {
                 if (a.rank < b.rank)
@@ -11465,7 +11444,7 @@ class Table {
                 dropSpotX = Math.floor((Constants_1.STAGE_WIDTH - (((cards.length - 1) * Constants_1.PLAYER_CARD_SPREAD) + 99)) / 2);
                 dropSpotY = 440;
             }
-            for (let card of cards) {
+            cards.forEach(card => {
                 card.positionMe(dropSpotX, dropSpotY);
                 card.disableMe();
                 if ((player.orientation == Player_1.default.ORIENTATION_LEFT) || (player.orientation == Player_1.default.ORIENTATION_RIGHT)) {
@@ -11483,8 +11462,8 @@ class Table {
                     card.showFaceUp();
                     dropSpotX = dropSpotX + Constants_1.PLAYER_CARD_SPREAD;
                 }
-            }
-        }
+            });
+        });
     }
 }
 exports.default = Table;
