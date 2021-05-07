@@ -37,6 +37,7 @@ export default class ScreenManager {
     private eventStartGameFor4:createjs.Event;
     private eventShowGameOver:createjs.Event;
     private eventOver:createjs.Event;
+    private eventOut:createjs.Event;
 
     constructor(stage:createjs.StageGL, assetManager:AssetManager) {
         this.selectionCount = 0;
@@ -130,6 +131,7 @@ export default class ScreenManager {
         this.eventStartGameFor4 = new createjs.Event("startGameFor4", true, false);
         this.eventShowGameOver = new createjs.Event("showGameOver", true, false);
         this.eventOver = new createjs.Event("mouseover",true,false)
+        this.eventOut = new createjs.Event("mouseout",true,false)
     }
 
     // -------------------------------------------------- public methods
@@ -138,7 +140,8 @@ export default class ScreenManager {
         this.hideAll();
         this.stage.addChildAt(this.introScreen,1);
         if (mouseHit(this.stage, this.btnThreePlayers, this.stage.mouseX, this.stage.mouseY)) this.btnThreePlayers.dispatchEvent(this.eventOver);
-        if (mouseHit(this.stage, this.btnFourPlayers, this.stage.mouseX, this.stage.mouseY)) this.btnFourPlayers.dispatchEvent(this.eventOver);
+        else if (mouseHit(this.stage, this.btnFourPlayers, this.stage.mouseX, this.stage.mouseY)) this.btnFourPlayers.dispatchEvent(this.eventOver);
+        else this.btnFourPlayers.dispatchEvent(this.eventOut);
     }
 
     public showGame():void {
@@ -180,6 +183,7 @@ export default class ScreenManager {
 
         // check if mouse currently over playspot when enabled to make cursor appear without additional movement
         if (mouseHit(this.stage, this.summaryScreen, this.stage.mouseX, this.stage.mouseY)) this.summaryScreen.dispatchEvent(this.eventOver);
+        else this.summaryScreen.dispatchEvent(this.eventOut);
     }
 
     public showCardSwap(humanPlayer:HumanPlayer):void {
@@ -205,6 +209,7 @@ export default class ScreenManager {
 
         // check if mouse currently over playspot when enabled to make cursor appear without additional movement
         if (mouseHit(this.stage, this.swapScreen, this.stage.mouseX, this.stage.mouseY)) this.swapScreen.dispatchEvent(this.eventOver);
+        else this.swapScreen.dispatchEvent(this.eventOut);
     }
 
     public showGameOver(winner:Player, roundCounter:number):void {
@@ -214,6 +219,7 @@ export default class ScreenManager {
         this.txtRounds.text = roundCounter.toString();
         this.stage.addChildAt(this.gameOverScreen, 1);
         if (mouseHit(this.stage, this.btnMenu, this.stage.mouseX, this.stage.mouseY)) this.btnMenu.dispatchEvent(this.eventOver);
+        else this.btnMenu.dispatchEvent(this.eventOut);
     }
 
     // --------------------------------------------------- public methods

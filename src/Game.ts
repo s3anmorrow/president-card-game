@@ -29,7 +29,8 @@ let deck:Card[];
 
 // other variables
 let playerCount:number = 4;  // 4 or 3
-let turnIndex:number = 0;
+let playersInRoundCount:number;
+let turnIndex:number;
 let turnTimer:number;
 let turnPhase:number;
 let playType:number;
@@ -56,7 +57,7 @@ function startGame():void {
 
     // new game - deal the cards before starting the round
     table.dealCards();
-    // // on new game, randomly pick who goes first
+    // on new game, randomly pick who goes first
     // turnIndex = randomMe(0, players.length - 1);
     startRound();
 }
@@ -64,6 +65,7 @@ function startGame():void {
 function startRound():void {
     roundOn = true;            
     passCounter = 0;
+    playersInRoundCount = table.playersInRoundCount;
     turnIndex = 0;
     turnPhase = 1;
     playType = Player.PLAYED_NONE;
@@ -94,6 +96,7 @@ function processCards():void {
         console.log("=> 👍 CLEARED WITH TWO");
         table.clearTable();
         passCounter = 0;
+        playersInRoundCount = table.playersInRoundCount;
     } else if (playType == Player.PLAYED_PASS) {
         console.log("=> ❌ PASSED!");
         table.showPass();
@@ -123,10 +126,12 @@ function onTurn() {
         table.hidePass();
         table.showTurnMarker();
         // first clear table if player won by all others passing
-        if (passCounter >= (table.playersInRoundCount - 1)) {
+        // if (passCounter >= (table.playersInRoundCount - 1)) {
+        if (passCounter >= (playersInRoundCount - 1)) {
             console.log("=> 👍 CLEARED WITH PASS");
             table.clearTable();
             passCounter = 0;
+            playersInRoundCount = table.playersInRoundCount;
         }
         turnPhase++;
     } else if (turnPhase == 2) {
@@ -232,11 +237,10 @@ function onReady(e:createjs.Event):void {
     // construct deck of Cards
     deck = [];
     for (let n:number=2; n<=14; n++) {
-    // for (let n:number=2; n<=13; n++) {
         deck.push(new Card(stage, assetManager, table, "C",n));
         deck.push(new Card(stage, assetManager, table, "H",n));
-        deck.push(new Card(stage, assetManager, table, "D",n));
         deck.push(new Card(stage, assetManager, table, "S",n));
+        deck.push(new Card(stage, assetManager, table, "D",n));
     }
     // construct human player
     humanPlayer = new HumanPlayer("You", stage, assetManager, deck, table);

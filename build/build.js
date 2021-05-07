@@ -10339,8 +10339,8 @@ class ComputerPlayer extends Player_1.default {
         return count;
     }
     selectCards() {
-        const LOW_CARD_THRESHOLD = 4;
-        const HIGH_CARD_THRESHOLD = 6;
+        const LOW_CARD_THRESHOLD = 3;
+        const HIGH_CARD_THRESHOLD = 7;
         let playedCount = this.table.playedCards.length;
         let playedRank = 2;
         if (this.table.playedCards.length > 0)
@@ -10553,7 +10553,8 @@ let computerPlayer3;
 let players;
 let deck;
 let playerCount = 4;
-let turnIndex = 0;
+let playersInRoundCount;
+let turnIndex;
 let turnTimer;
 let turnPhase;
 let playType;
@@ -10579,6 +10580,7 @@ function startGame() {
 function startRound() {
     roundOn = true;
     passCounter = 0;
+    playersInRoundCount = table.playersInRoundCount;
     turnIndex = 0;
     turnPhase = 1;
     playType = Player_1.default.PLAYED_NONE;
@@ -10603,6 +10605,7 @@ function processCards() {
         console.log("=> 👍 CLEARED WITH TWO");
         table.clearTable();
         passCounter = 0;
+        playersInRoundCount = table.playersInRoundCount;
     }
     else if (playType == Player_1.default.PLAYED_PASS) {
         console.log("=> ❌ PASSED!");
@@ -10627,10 +10630,11 @@ function onTurn() {
         table.currentPlayer = players[turnIndex];
         table.hidePass();
         table.showTurnMarker();
-        if (passCounter >= (table.playersInRoundCount - 1)) {
+        if (passCounter >= (playersInRoundCount - 1)) {
             console.log("=> 👍 CLEARED WITH PASS");
             table.clearTable();
             passCounter = 0;
+            playersInRoundCount = table.playersInRoundCount;
         }
         turnPhase++;
     }
@@ -10728,8 +10732,8 @@ function onReady(e) {
     for (let n = 2; n <= 14; n++) {
         deck.push(new Card_1.default(stage, assetManager, table, "C", n));
         deck.push(new Card_1.default(stage, assetManager, table, "H", n));
-        deck.push(new Card_1.default(stage, assetManager, table, "D", n));
         deck.push(new Card_1.default(stage, assetManager, table, "S", n));
+        deck.push(new Card_1.default(stage, assetManager, table, "D", n));
     }
     humanPlayer = new HumanPlayer_1.default("You", stage, assetManager, deck, table);
     computerPlayer1 = new ComputerPlayer_1.default("Shifty", stage, assetManager, deck, humanPlayer, table);
@@ -11135,6 +11139,7 @@ class ScreenManager {
         this.eventStartGameFor4 = new createjs.Event("startGameFor4", true, false);
         this.eventShowGameOver = new createjs.Event("showGameOver", true, false);
         this.eventOver = new createjs.Event("mouseover", true, false);
+        this.eventOut = new createjs.Event("mouseout", true, false);
     }
     showIntro() {
         this.state = ScreenManager.STATE_INTRO;
@@ -11142,8 +11147,10 @@ class ScreenManager {
         this.stage.addChildAt(this.introScreen, 1);
         if (Toolkit_1.mouseHit(this.stage, this.btnThreePlayers, this.stage.mouseX, this.stage.mouseY))
             this.btnThreePlayers.dispatchEvent(this.eventOver);
-        if (Toolkit_1.mouseHit(this.stage, this.btnFourPlayers, this.stage.mouseX, this.stage.mouseY))
+        else if (Toolkit_1.mouseHit(this.stage, this.btnFourPlayers, this.stage.mouseX, this.stage.mouseY))
             this.btnFourPlayers.dispatchEvent(this.eventOver);
+        else
+            this.btnFourPlayers.dispatchEvent(this.eventOut);
     }
     showGame() {
         this.state = ScreenManager.STATE_GAME;
@@ -11181,6 +11188,8 @@ class ScreenManager {
             this.summaryScreen.on("click", (e) => this.closeScreen(this.eventShowGameOver), this, true);
         if (Toolkit_1.mouseHit(this.stage, this.summaryScreen, this.stage.mouseX, this.stage.mouseY))
             this.summaryScreen.dispatchEvent(this.eventOver);
+        else
+            this.summaryScreen.dispatchEvent(this.eventOut);
     }
     showCardSwap(humanPlayer) {
         this.state = ScreenManager.STATE_SWAP;
@@ -11204,6 +11213,8 @@ class ScreenManager {
         this.stage.addChildAt(this.swapScreen, 1);
         if (Toolkit_1.mouseHit(this.stage, this.swapScreen, this.stage.mouseX, this.stage.mouseY))
             this.swapScreen.dispatchEvent(this.eventOver);
+        else
+            this.swapScreen.dispatchEvent(this.eventOut);
     }
     showGameOver(winner, roundCounter) {
         this.state = ScreenManager.STATE_GAME_OVER;
@@ -11213,6 +11224,8 @@ class ScreenManager {
         this.stage.addChildAt(this.gameOverScreen, 1);
         if (Toolkit_1.mouseHit(this.stage, this.btnMenu, this.stage.mouseX, this.stage.mouseY))
             this.btnMenu.dispatchEvent(this.eventOver);
+        else
+            this.btnMenu.dispatchEvent(this.eventOut);
     }
     update() {
         this.cursor.x = this.stage.mouseX;

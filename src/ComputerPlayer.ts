@@ -27,9 +27,9 @@ export default class ComputerPlayer extends Player {
     public selectCards():void  {
         // INTELLIGENCE GATHERING
         // number of cards that signifies a low card count
-        const LOW_CARD_THRESHOLD:number = 4;
+        const LOW_CARD_THRESHOLD:number = 3;
         // number of cards that signifies a high card count
-        const HIGH_CARD_THRESHOLD:number = 6;
+        const HIGH_CARD_THRESHOLD:number = 7;
 
         // collect information how many cards do I need to play?
         let playedCount:number = this.table.playedCards.length;
