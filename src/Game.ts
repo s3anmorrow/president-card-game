@@ -1,17 +1,8 @@
-// ??????????
-// TODO handle when humanplayer is neutral (3 players)
-// TODO fix issue with mouseover cards
-// TODO neutral reg point needs adjusting
-// TODO make turn marker border thicker
-// TODO add out of 10 on summary screen
-// ??????????
-
 // createjs typescript definition for TypeScript
 /// <reference path="./../node_modules/@types/createjs/index.d.ts" />
 // importing createjs framework
 import "createjs";
 // importing game constants
-import { randomMe } from "./Toolkit";
 import { STAGE_WIDTH, STAGE_HEIGHT, FRAME_RATE, ASSET_MANIFEST, TURN_DELAY_DEFAULT, WIN_SCORE } from "./Constants";
 import AssetManager from "./AssetManager";
 import ScreenManager from "./ScreenManager";
@@ -240,12 +231,12 @@ function onReady(e:createjs.Event):void {
     table = new Table(stage, assetManager);
     // construct deck of Cards
     deck = [];
-    // for (let n:number=2; n<=14; n++) {
-    for (let n:number=2; n<=13; n++) {
+    for (let n:number=2; n<=14; n++) {
+    // for (let n:number=2; n<=13; n++) {
         deck.push(new Card(stage, assetManager, table, "C",n));
-        // deck.push(new Card(stage, assetManager, table, "H",n));
-        // deck.push(new Card(stage, assetManager, table, "D",n));
-        // deck.push(new Card(stage, assetManager, table, "S",n));
+        deck.push(new Card(stage, assetManager, table, "H",n));
+        deck.push(new Card(stage, assetManager, table, "D",n));
+        deck.push(new Card(stage, assetManager, table, "S",n));
     }
     // construct human player
     humanPlayer = new HumanPlayer("You", stage, assetManager, deck, table);

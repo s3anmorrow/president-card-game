@@ -546,6 +546,7 @@
                 <false/>
             </struct>
             <key type="filename">screens/summaryAhole.png</key>
+            <key type="filename">screens/summaryNeutral.png</key>
             <key type="filename">screens/summaryPresident.png</key>
             <key type="filename">screens/summaryViceAhole.png</key>
             <key type="filename">screens/summaryVicePresident.png</key>
@@ -578,21 +579,6 @@
                 <rect>29,4,58,8</rect>
                 <key>scale9Paddings</key>
                 <rect>29,4,58,8</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
-            <key type="filename">screens/summaryNeutral.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>0.5,0.5</point_f>
-                <key>spriteScale</key>
-                <double>1</double>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>63,4,127,7</rect>
-                <key>scale9Paddings</key>
-                <rect>63,4,127,7</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>

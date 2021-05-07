@@ -2,6 +2,7 @@ import Player from "./Player";
 import Card from "./Card";
 import Table from "./Table";
 import AssetManager from "./AssetManager";
+import { mouseHit } from "./Toolkit";
 
 export default class HumanPlayer extends Player {
 
@@ -40,6 +41,8 @@ export default class HumanPlayer extends Player {
     public enableMe():void {
         this._hand.forEach(card => card.enableMe());
         this._state = Player.STATE_CARDS_NOT_SELECTED;
+        // check if mouse currently over playspot when enabled to make cursor appear without additional movement
+        if (mouseHit(this.stage, this.playSpot, this.stage.mouseX, this.stage.mouseY)) this.playSpot.dispatchEvent(new createjs.Event("mouseover",true,false));
     }
 
     public disableMe():void {
@@ -62,7 +65,10 @@ export default class HumanPlayer extends Player {
         if ((this._state == Player.STATE_DISABLED) || (this._state == Player.STATE_OUT)) return;
         if (this._state == Player.STATE_CARDS_SELECTED) {
             // human playing is playing cards - check if selected cards are valid?
-            if (this.table.validateCards() == false) return;
+            if (this.table.validateCards() == false) {
+                createjs.Sound.play("error");
+                return;
+            }
             // player has made a selection for his/her turn
             this.disableMe();
         } else if (this._state == Player.STATE_CARDS_NOT_SELECTED) {

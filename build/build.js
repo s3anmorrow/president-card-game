@@ -10725,8 +10725,11 @@ function onReady(e) {
     screenManager = new ScreenManager_1.default(stage, assetManager);
     table = new Table_1.default(stage, assetManager);
     deck = [];
-    for (let n = 2; n <= 13; n++) {
+    for (let n = 2; n <= 14; n++) {
         deck.push(new Card_1.default(stage, assetManager, table, "C", n));
+        deck.push(new Card_1.default(stage, assetManager, table, "H", n));
+        deck.push(new Card_1.default(stage, assetManager, table, "D", n));
+        deck.push(new Card_1.default(stage, assetManager, table, "S", n));
     }
     humanPlayer = new HumanPlayer_1.default("You", stage, assetManager, deck, table);
     computerPlayer1 = new ComputerPlayer_1.default("Shifty", stage, assetManager, deck, humanPlayer, table);
@@ -10780,6 +10783,7 @@ main();
 Object.defineProperty(exports, "__esModule", { value: true });
 const Player_1 = __webpack_require__(/*! ./Player */ "./src/Player.ts");
 const Card_1 = __webpack_require__(/*! ./Card */ "./src/Card.ts");
+const Toolkit_1 = __webpack_require__(/*! ./Toolkit */ "./src/Toolkit.ts");
 class HumanPlayer extends Player_1.default {
     constructor(name, stage, assetManager, deck, table) {
         super(name, stage, assetManager, deck, table);
@@ -10801,6 +10805,8 @@ class HumanPlayer extends Player_1.default {
     enableMe() {
         this._hand.forEach(card => card.enableMe());
         this._state = Player_1.default.STATE_CARDS_NOT_SELECTED;
+        if (Toolkit_1.mouseHit(this.stage, this.playSpot, this.stage.mouseX, this.stage.mouseY))
+            this.playSpot.dispatchEvent(new createjs.Event("mouseover", true, false));
     }
     disableMe() {
         this._hand.forEach(card => card.disableMe());
@@ -10817,8 +10823,10 @@ class HumanPlayer extends Player_1.default {
         if ((this._state == Player_1.default.STATE_DISABLED) || (this._state == Player_1.default.STATE_OUT))
             return;
         if (this._state == Player_1.default.STATE_CARDS_SELECTED) {
-            if (this.table.validateCards() == false)
+            if (this.table.validateCards() == false) {
+                createjs.Sound.play("error");
                 return;
+            }
             this.disableMe();
         }
         else if (this._state == Player_1.default.STATE_CARDS_NOT_SELECTED) {
@@ -11156,7 +11164,7 @@ class ScreenManager {
             else if (player.status == -2)
                 statusName = "Ahole";
             this.summaryScreen.addChild(this.assetManager.getSprite("sprites", "screens/summary" + statusName, 173, dropY));
-            this.txtScores[index].text = player.score.toString();
+            this.txtScores[index].text = player.score.toString() + " of " + Constants_1.WIN_SCORE;
             this.summaryScreen.addChild(this.txtScores[index]);
             dropY += 35;
         });
@@ -11560,7 +11568,7 @@ exports.default = Table;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.pointHit = exports.boxHit = exports.probabilityMe = exports.randomMe = void 0;
+exports.mouseHit = exports.pointHit = exports.boxHit = exports.probabilityMe = exports.randomMe = void 0;
 function randomMe(low, high) {
     let randomNum = 0;
     randomNum = Math.floor(Math.random() * (high - low + 1)) + low;
@@ -11612,6 +11620,16 @@ function pointHit(sprite1, sprite2, sprite1HitX = 0, sprite1HitY = 0, stage = nu
     }
 }
 exports.pointHit = pointHit;
+function mouseHit(sprite1, sprite2, sprite1HitX = 0, sprite1HitY = 0, stage = null) {
+    let point = sprite1.localToLocal(sprite1HitX, sprite1HitY, sprite2);
+    if (sprite2.hitTest(point.x, point.y)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+exports.mouseHit = mouseHit;
 
 
 /***/ }),
@@ -11623,7 +11641,7 @@ exports.pointHit = pointHit;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! D:\OneDrive - Nova Scotia Community College\_workspace\_working\president-card-game\node_modules\webpack-dev-server\client\index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
+__webpack_require__(/*! /Users/seanmorrow/OneDrive - Nova Scotia Community College/_workspace/_working/president-card-game/node_modules/webpack-dev-server/client/index.js?http://localhost:5005 */"./node_modules/webpack-dev-server/client/index.js?http://localhost:5005");
 module.exports = __webpack_require__(/*! ./src/Game.ts */"./src/Game.ts");
 
 

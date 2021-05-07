@@ -1,7 +1,7 @@
 import AssetManager from "./AssetManager";
 import Player from "./Player";
 import HumanPlayer from "./HumanPlayer";
-import { STAGE_WIDTH, STAGE_HEIGHT } from "./Constants";
+import { STAGE_WIDTH, STAGE_HEIGHT, WIN_SCORE } from "./Constants";
 
 export default class ScreenManager {
     public static STATE_INTRO:number = 0;
@@ -160,7 +160,7 @@ export default class ScreenManager {
             else if (player.status == -2) statusName = "Ahole";
             this.summaryScreen.addChild(this.assetManager.getSprite("sprites","screens/summary" + statusName, 173, dropY));
 
-            this.txtScores[index].text = player.score.toString();
+            this.txtScores[index].text = player.score.toString() + " of " + WIN_SCORE;
             this.summaryScreen.addChild(this.txtScores[index]);
             dropY += 35;
         })

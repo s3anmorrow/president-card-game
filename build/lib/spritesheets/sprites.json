@@ -130,7 +130,7 @@
     [304, 823, 99, 135, 0, 0, 0],
     [405, 823, 115, 151, 0, 8, 8],
     [522, 823, 253, 14, 0, 0, 0],
-    [777, 823, 253, 14, 0, 126.5, 7],
+    [777, 823, 253, 14, 0, 0, 0],
     [1032, 823, 253, 14, 0, 0, 0],
     [1287, 823, 253, 14, 0, 0, 0],
     [1542, 823, 253, 14, 0, 0, 0],
@@ -306,7 +306,7 @@
 },
 
 "texturepacker": [
-        "SmartUpdateHash: $TexturePacker:SmartUpdate:ff8fb12f7759da12ac3ba75559e6903b:1202cfccd857c82c3f0e3e30f9650194:1eabdf11f75e3a4fe3147baf7b5be24b$",
+        "SmartUpdateHash: $TexturePacker:SmartUpdate:c05a3718fa9119cdf1ee92b20d2cbd52:1202cfccd857c82c3f0e3e30f9650194:1eabdf11f75e3a4fe3147baf7b5be24b$",
         "Created with TexturePacker (https://www.codeandweb.com/texturepacker) for EaselJS"
 ]
 

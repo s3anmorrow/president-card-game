@@ -164,5 +164,4 @@ export default class Card {
         this.hideTurnMarker();
         this.hideAllMarkers();
     }
-
 }
