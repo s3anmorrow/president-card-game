@@ -42,7 +42,7 @@ export const ASSET_MANIFEST:Object[] = [
         type:"sound",
         src:"./lib/sounds/gameOver.ogg",
         id:"gameOver",
-        data:4
+        data:1
     },
     {
         type:"sound",
@@ -66,7 +66,7 @@ export const ASSET_MANIFEST:Object[] = [
         type:"sound",
         src:"./lib/sounds/roundOver.ogg",
         id:"roundOver",
-        data:4
+        data:1
     },
     {
         type:"sound",

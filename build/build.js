@@ -10358,7 +10358,7 @@ class ComputerPlayer extends Player_1.default {
         let humanLowAlert = (this.humanPlayer.hand.length < LOW_CARD_THRESHOLD);
         if (playedCount == 0) {
             if (playableCards.length > 0) {
-                if (humanLowAlert && Toolkit_1.probabilityMe(40)) {
+                if (humanLowAlert && Toolkit_1.probabilityMe(35)) {
                     this._selectedCards = playableCards.slice(-highCount);
                 }
                 else {
@@ -10390,7 +10390,7 @@ class ComputerPlayer extends Player_1.default {
                 else if (this._hand.length > HIGH_CARD_THRESHOLD) {
                     this._selectedCards = playableCards.slice(0, playedCount);
                 }
-                else if ((twoCount > 0) && (Toolkit_1.probabilityMe(75))) {
+                else if ((twoCount > 0) && (Toolkit_1.probabilityMe(40))) {
                     this._selectedCards = this._hand.slice(0, 1);
                 }
                 else if (Toolkit_1.probabilityMe(10)) {
@@ -10404,7 +10404,7 @@ class ComputerPlayer extends Player_1.default {
                 }
             }
             else {
-                if ((twoCount > 0) && (Toolkit_1.probabilityMe(60))) {
+                if ((twoCount > 0) && (Toolkit_1.probabilityMe(50))) {
                     this._selectedCards = this._hand.slice(0, 1);
                 }
                 else {
@@ -10473,7 +10473,7 @@ exports.ASSET_MANIFEST = [
         type: "sound",
         src: "./lib/sounds/gameOver.ogg",
         id: "gameOver",
-        data: 4
+        data: 1
     },
     {
         type: "sound",
@@ -10497,7 +10497,7 @@ exports.ASSET_MANIFEST = [
         type: "sound",
         src: "./lib/sounds/roundOver.ogg",
         id: "roundOver",
-        data: 4
+        data: 1
     },
     {
         type: "sound",
@@ -11057,6 +11057,7 @@ Player.STATUS_AHOLE = -2;
 Object.defineProperty(exports, "__esModule", { value: true });
 const Player_1 = __webpack_require__(/*! ./Player */ "./src/Player.ts");
 const Constants_1 = __webpack_require__(/*! ./Constants */ "./src/Constants.ts");
+const Toolkit_1 = __webpack_require__(/*! ./Toolkit */ "./src/Toolkit.ts");
 class ScreenManager {
     constructor(stage, assetManager) {
         this.selectionCount = 0;
@@ -11076,16 +11077,16 @@ class ScreenManager {
         this.introScreen.x = 125;
         this.introScreen.y = 128;
         this.introScreen.addChild(assetManager.getSprite("sprites", "screens/intro", 0, 0));
-        let btnThreePlayers = this.assetManager.getSprite("sprites", "screens/btnThreePlayers", 55, 165);
-        btnThreePlayers.on("mouseover", this.onOver, this);
-        btnThreePlayers.on("mouseout", this.onOut, this);
-        let btnFourPlayers = this.assetManager.getSprite("sprites", "screens/btnFourPlayers", 55, 225);
-        btnFourPlayers.on("mouseover", this.onOver, this);
-        btnFourPlayers.on("mouseout", this.onOut, this);
-        this.introScreen.addChild(btnThreePlayers);
-        this.introScreen.addChild(btnFourPlayers);
-        btnThreePlayers.on("click", (e) => this.closeScreen(this.eventStartGameFor3), this);
-        btnFourPlayers.on("click", (e) => this.closeScreen(this.eventStartGameFor4), this);
+        this.btnThreePlayers = this.assetManager.getSprite("sprites", "screens/btnThreePlayers", 55, 165);
+        this.btnThreePlayers.on("mouseover", this.onOver, this);
+        this.btnThreePlayers.on("mouseout", this.onOut, this);
+        this.btnFourPlayers = this.assetManager.getSprite("sprites", "screens/btnFourPlayers", 55, 225);
+        this.btnFourPlayers.on("mouseover", this.onOver, this);
+        this.btnFourPlayers.on("mouseout", this.onOut, this);
+        this.introScreen.addChild(this.btnThreePlayers);
+        this.introScreen.addChild(this.btnFourPlayers);
+        this.btnThreePlayers.on("click", (e) => this.closeScreen(this.eventStartGameFor3), this);
+        this.btnFourPlayers.on("click", (e) => this.closeScreen(this.eventStartGameFor4), this);
         this.gameScreen = new createjs.Container();
         this.gameScreen.addChild(assetManager.getSprite("sprites", "screens/tableLabel1", 400, 135));
         this.gameScreen.addChild(assetManager.getSprite("sprites", "screens/tableLabel2", 400, 344));
@@ -11122,22 +11123,27 @@ class ScreenManager {
         this.txtRounds.x = 380;
         this.txtRounds.y = 130;
         this.gameOverScreen.addChild(this.txtRounds);
-        let btnMenu = assetManager.getSprite("sprites", "screens/btnMenu", 30, 190);
-        btnMenu.on("mouseover", this.onOver, this);
-        btnMenu.on("mouseout", this.onOut, this);
-        btnMenu.on("click", (e) => this.closeScreen(this.eventShowIntroScreen), this);
-        this.gameOverScreen.addChild(btnMenu);
+        this.btnMenu = assetManager.getSprite("sprites", "screens/btnMenu", 30, 190);
+        this.btnMenu.on("mouseover", this.onOver, this);
+        this.btnMenu.on("mouseout", this.onOut, this);
+        this.btnMenu.on("click", (e) => this.closeScreen(this.eventShowIntroScreen), this);
+        this.gameOverScreen.addChild(this.btnMenu);
         this.eventShowIntroScreen = new createjs.Event("showIntroScreen", true, false);
         this.eventShowSwapScreen = new createjs.Event("showSwapScreen", true, false);
         this.eventStartAnotherRound = new createjs.Event("startAnotherRound", true, false);
         this.eventStartGameFor3 = new createjs.Event("startGameFor3", true, false);
         this.eventStartGameFor4 = new createjs.Event("startGameFor4", true, false);
         this.eventShowGameOver = new createjs.Event("showGameOver", true, false);
+        this.eventOver = new createjs.Event("mouseover", true, false);
     }
     showIntro() {
         this.state = ScreenManager.STATE_INTRO;
         this.hideAll();
         this.stage.addChildAt(this.introScreen, 1);
+        if (Toolkit_1.mouseHit(this.stage, this.btnThreePlayers, this.stage.mouseX, this.stage.mouseY))
+            this.btnThreePlayers.dispatchEvent(this.eventOver);
+        if (Toolkit_1.mouseHit(this.stage, this.btnFourPlayers, this.stage.mouseX, this.stage.mouseY))
+            this.btnFourPlayers.dispatchEvent(this.eventOver);
     }
     showGame() {
         this.state = ScreenManager.STATE_GAME;
@@ -11173,6 +11179,8 @@ class ScreenManager {
             this.summaryScreen.on("click", (e) => this.closeScreen(this.eventShowSwapScreen), this, true);
         else
             this.summaryScreen.on("click", (e) => this.closeScreen(this.eventShowGameOver), this, true);
+        if (Toolkit_1.mouseHit(this.stage, this.summaryScreen, this.stage.mouseX, this.stage.mouseY))
+            this.summaryScreen.dispatchEvent(this.eventOver);
     }
     showCardSwap(humanPlayer) {
         this.state = ScreenManager.STATE_SWAP;
@@ -11194,6 +11202,8 @@ class ScreenManager {
         else if (humanPlayer.status == Player_1.default.STATUS_AHOLE)
             this.swapPrompt.gotoAndStop("screens/swapAhole");
         this.stage.addChildAt(this.swapScreen, 1);
+        if (Toolkit_1.mouseHit(this.stage, this.swapScreen, this.stage.mouseX, this.stage.mouseY))
+            this.swapScreen.dispatchEvent(this.eventOver);
     }
     showGameOver(winner, roundCounter) {
         this.state = ScreenManager.STATE_GAME_OVER;
@@ -11201,6 +11211,8 @@ class ScreenManager {
         this.winnerPrompt.gotoAndStop("screens/gameOver" + winner.name);
         this.txtRounds.text = roundCounter.toString();
         this.stage.addChildAt(this.gameOverScreen, 1);
+        if (Toolkit_1.mouseHit(this.stage, this.btnMenu, this.stage.mouseX, this.stage.mouseY))
+            this.btnMenu.dispatchEvent(this.eventOver);
     }
     update() {
         this.cursor.x = this.stage.mouseX;

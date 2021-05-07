@@ -2,6 +2,7 @@ import AssetManager from "./AssetManager";
 import Player from "./Player";
 import HumanPlayer from "./HumanPlayer";
 import { STAGE_WIDTH, STAGE_HEIGHT, WIN_SCORE } from "./Constants";
+import { mouseHit } from "./Toolkit";
 
 export default class ScreenManager {
     public static STATE_INTRO:number = 0;
@@ -25,6 +26,9 @@ export default class ScreenManager {
     private txtRounds:createjs.BitmapText;
     private stage:createjs.StageGL;
     private state:number;
+    private btnThreePlayers:createjs.Sprite;
+    private btnFourPlayers:createjs.Sprite;
+    private btnMenu:createjs.Sprite;
 
     private eventShowIntroScreen:createjs.Event;
     private eventShowSwapScreen:createjs.Event;
@@ -32,6 +36,7 @@ export default class ScreenManager {
     private eventStartGameFor3:createjs.Event;
     private eventStartGameFor4:createjs.Event;
     private eventShowGameOver:createjs.Event;
+    private eventOver:createjs.Event;
 
     constructor(stage:createjs.StageGL, assetManager:AssetManager) {
         this.selectionCount = 0;
@@ -57,16 +62,16 @@ export default class ScreenManager {
         this.introScreen.x = 125;
         this.introScreen.y = 128;   
         this.introScreen.addChild(assetManager.getSprite("sprites", "screens/intro", 0, 0));     
-        let btnThreePlayers:createjs.Sprite = this.assetManager.getSprite("sprites","screens/btnThreePlayers",55,165);
-        btnThreePlayers.on("mouseover", this.onOver, this);
-        btnThreePlayers.on("mouseout", this.onOut, this);
-        let btnFourPlayers:createjs.Sprite = this.assetManager.getSprite("sprites","screens/btnFourPlayers",55,225);
-        btnFourPlayers.on("mouseover", this.onOver, this);
-        btnFourPlayers.on("mouseout", this.onOut, this);
-        this.introScreen.addChild(btnThreePlayers);
-        this.introScreen.addChild(btnFourPlayers);
-        btnThreePlayers.on("click", (e:createjs.Event) => this.closeScreen(this.eventStartGameFor3), this);
-        btnFourPlayers.on("click", (e:createjs.Event) => this.closeScreen(this.eventStartGameFor4), this);
+        this.btnThreePlayers = this.assetManager.getSprite("sprites","screens/btnThreePlayers",55,165);
+        this.btnThreePlayers.on("mouseover", this.onOver, this);
+        this.btnThreePlayers.on("mouseout", this.onOut, this);
+        this.btnFourPlayers = this.assetManager.getSprite("sprites","screens/btnFourPlayers",55,225);
+        this.btnFourPlayers.on("mouseover", this.onOver, this);
+        this.btnFourPlayers.on("mouseout", this.onOut, this);
+        this.introScreen.addChild(this.btnThreePlayers);
+        this.introScreen.addChild(this.btnFourPlayers);
+        this.btnThreePlayers.on("click", (e:createjs.Event) => this.closeScreen(this.eventStartGameFor3), this);
+        this.btnFourPlayers.on("click", (e:createjs.Event) => this.closeScreen(this.eventStartGameFor4), this);
 
         // game screen initialization
         this.gameScreen = new createjs.Container();
@@ -111,11 +116,11 @@ export default class ScreenManager {
         this.txtRounds.x = 380;
         this.txtRounds.y = 130;
         this.gameOverScreen.addChild(this.txtRounds);
-        let btnMenu:createjs.Sprite = assetManager.getSprite("sprites","screens/btnMenu",30,190);
-        btnMenu.on("mouseover", this.onOver, this);
-        btnMenu.on("mouseout", this.onOut, this);
-        btnMenu.on("click", (e:createjs.Event) => this.closeScreen(this.eventShowIntroScreen), this);
-        this.gameOverScreen.addChild(btnMenu);
+        this.btnMenu = assetManager.getSprite("sprites","screens/btnMenu",30,190);
+        this.btnMenu.on("mouseover", this.onOver, this);
+        this.btnMenu.on("mouseout", this.onOut, this);
+        this.btnMenu.on("click", (e:createjs.Event) => this.closeScreen(this.eventShowIntroScreen), this);
+        this.gameOverScreen.addChild(this.btnMenu);
 
         // construct custom event objects
         this.eventShowIntroScreen = new createjs.Event("showIntroScreen", true, false);
@@ -124,6 +129,7 @@ export default class ScreenManager {
         this.eventStartGameFor3 = new createjs.Event("startGameFor3", true, false);
         this.eventStartGameFor4 = new createjs.Event("startGameFor4", true, false);
         this.eventShowGameOver = new createjs.Event("showGameOver", true, false);
+        this.eventOver = new createjs.Event("mouseover",true,false)
     }
 
     // -------------------------------------------------- public methods
@@ -131,6 +137,8 @@ export default class ScreenManager {
         this.state = ScreenManager.STATE_INTRO;      
         this.hideAll();
         this.stage.addChildAt(this.introScreen,1);
+        if (mouseHit(this.stage, this.btnThreePlayers, this.stage.mouseX, this.stage.mouseY)) this.btnThreePlayers.dispatchEvent(this.eventOver);
+        if (mouseHit(this.stage, this.btnFourPlayers, this.stage.mouseX, this.stage.mouseY)) this.btnFourPlayers.dispatchEvent(this.eventOver);
     }
 
     public showGame():void {
@@ -169,6 +177,9 @@ export default class ScreenManager {
         // wire up event listener according to whether game is on or not after summary screen
         if (gameOn) this.summaryScreen.on("click", (e:createjs.Event) => this.closeScreen(this.eventShowSwapScreen), this, true);
         else this.summaryScreen.on("click", (e:createjs.Event) => this.closeScreen(this.eventShowGameOver), this, true);
+
+        // check if mouse currently over playspot when enabled to make cursor appear without additional movement
+        if (mouseHit(this.stage, this.summaryScreen, this.stage.mouseX, this.stage.mouseY)) this.summaryScreen.dispatchEvent(this.eventOver);
     }
 
     public showCardSwap(humanPlayer:HumanPlayer):void {
@@ -191,6 +202,9 @@ export default class ScreenManager {
         else if (humanPlayer.status == Player.STATUS_VICE_AHOLE) this.swapPrompt.gotoAndStop("screens/swapViceAhole");
         else if (humanPlayer.status == Player.STATUS_AHOLE) this.swapPrompt.gotoAndStop("screens/swapAhole");
         this.stage.addChildAt(this.swapScreen, 1);
+
+        // check if mouse currently over playspot when enabled to make cursor appear without additional movement
+        if (mouseHit(this.stage, this.swapScreen, this.stage.mouseX, this.stage.mouseY)) this.swapScreen.dispatchEvent(this.eventOver);
     }
 
     public showGameOver(winner:Player, roundCounter:number):void {
@@ -199,6 +213,7 @@ export default class ScreenManager {
         this.winnerPrompt.gotoAndStop("screens/gameOver" + winner.name);
         this.txtRounds.text = roundCounter.toString();
         this.stage.addChildAt(this.gameOverScreen, 1);
+        if (mouseHit(this.stage, this.btnMenu, this.stage.mouseX, this.stage.mouseY)) this.btnMenu.dispatchEvent(this.eventOver);
     }
 
     // --------------------------------------------------- public methods
