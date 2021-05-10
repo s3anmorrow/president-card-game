@@ -54,3 +54,14 @@ export function pointHit(sprite1:createjs.Sprite, sprite2:createjs.Sprite, sprit
         return false;
     }
 }
+
+export function mouseHit(sprite1:createjs.StageGL, sprite2:createjs.DisplayObject, sprite1HitX:number = 0, sprite1HitY:number = 0, stage:createjs.StageGL = null):boolean {
+    // convert sprite2 coordinate system to be the same as sprite1
+    let point:createjs.Point = sprite1.localToLocal(sprite1HitX, sprite1HitY, sprite2);
+    // do collision detection test using hitTest() method of Sprite
+    if (sprite2.hitTest(point.x, point.y)) {
+        return true;
+    } else {
+        return false;
+    }
+}

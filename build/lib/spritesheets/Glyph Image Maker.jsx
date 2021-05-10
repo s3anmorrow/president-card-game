@@ -19,7 +19,7 @@
 
 // the glyphs of the bitmaptext
 //var myGlyphs = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; 
-var myGlyphs = "1234567890"; 
+var myGlyphs = "1234567890of"; 
 // color of bitmapttext in hexidecimal (#FF0000)
 var myColor = "#FFFFFF";
 // font size of bitmaptext (pt size)

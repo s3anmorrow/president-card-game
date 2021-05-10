@@ -161,9 +161,7 @@ export default class Card {
 
     public reset():void {
         this._state = Card.STATE_ENABLED;
-        // this.hideMe();
         this.hideTurnMarker();
         this.hideAllMarkers();
     }
-
 }

@@ -27,9 +27,9 @@ export default class ComputerPlayer extends Player {
     public selectCards():void  {
         // INTELLIGENCE GATHERING
         // number of cards that signifies a low card count
-        const LOW_CARD_THRESHOLD:number = 4;
+        const LOW_CARD_THRESHOLD:number = 3;
         // number of cards that signifies a high card count
-        const HIGH_CARD_THRESHOLD:number = 6;
+        const HIGH_CARD_THRESHOLD:number = 7;
 
         // collect information how many cards do I need to play?
         let playedCount:number = this.table.playedCards.length;
@@ -59,7 +59,7 @@ export default class ComputerPlayer extends Player {
         if (playedCount == 0) {
             // STARTING NEW ROUND
             if (playableCards.length > 0){
-                if (humanLowAlert && probabilityMe(40)) {
+                if (humanLowAlert && probabilityMe(35)) {
                     // aggressive play - drop highest card set to screw over human player
                     this._selectedCards = playableCards.slice(-highCount);
                 } else {
@@ -95,7 +95,7 @@ export default class ComputerPlayer extends Player {
                 } else if (this._hand.length > HIGH_CARD_THRESHOLD){						
                     // get rid of cards play - play low card(s)
                     this._selectedCards = playableCards.slice(0, playedCount);
-                } else if ((twoCount > 0) && (probabilityMe(75))) {
+                } else if ((twoCount > 0) && (probabilityMe(40))) {
                     // clear board play - player drops a two for no reason
                     this._selectedCards = this._hand.slice(0, 1);                    
                 } else if (probabilityMe(10)) {
@@ -111,7 +111,7 @@ export default class ComputerPlayer extends Player {
                 } 
             } else {
                 // no playable cards to play - drop twos or pass
-                if ((twoCount > 0) && (probabilityMe(60))) {
+                if ((twoCount > 0) && (probabilityMe(50))) {
                     // drop two to clear board
                     this._selectedCards = this._hand.slice(0, 1);
                 } else {

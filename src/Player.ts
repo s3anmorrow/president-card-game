@@ -31,7 +31,6 @@ export default abstract class Player {
     protected stage:createjs.StageGL;
     protected deck:Card[];
     protected table:Table;
-    protected turnDelayTimer:number;
 
     protected _state:number;
     protected _name:string;
@@ -104,10 +103,6 @@ export default abstract class Player {
         // deal a single card to the player (remove it from the deck)
         let index:number = randomMe(0, this.deck.length - 1);
         this._hand.push(this.deck[index]);
-        
-        // reset card from possible previous game
-        // this.deck[index].reset();
-
         this.deck.splice(index,1);
 
         // player is now playing!
@@ -122,6 +117,7 @@ export default abstract class Player {
 
     public returnCards():void {
         this._hand.forEach(card => this.deck.push(card));
+        this._selectedCards = [];
         this._hand = [];
     }
 

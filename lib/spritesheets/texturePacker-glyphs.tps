@@ -190,6 +190,7 @@
             <key type="filename">glyphs/7.png</key>
             <key type="filename">glyphs/8.png</key>
             <key type="filename">glyphs/9.png</key>
+            <key type="filename">glyphs/o.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0,0.16</point_f>
@@ -219,6 +220,21 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
+            <key type="filename">glyphs/f.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0,0.16</point_f>
+                <key>spriteScale</key>
+                <double>1</double>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>3,25,7,50</rect>
+                <key>scale9Paddings</key>
+                <rect>3,25,7,50</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
         </map>
         <key>fileList</key>
         <array>
@@ -232,6 +248,8 @@
             <filename>glyphs/7.png</filename>
             <filename>glyphs/8.png</filename>
             <filename>glyphs/9.png</filename>
+            <filename>glyphs/f.png</filename>
+            <filename>glyphs/o.png</filename>
         </array>
         <key>ignoreFileList</key>
         <array/>

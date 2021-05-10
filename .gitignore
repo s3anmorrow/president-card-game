@@ -1,2 +1,5 @@
-node_modules
-_assets
+node_modules/
+/_assets
+.DS_store
+*.tps
+*.jsx
