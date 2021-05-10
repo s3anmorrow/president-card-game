@@ -10718,8 +10718,15 @@ function onGameEvent(e) {
             break;
         case "showGameOver":
             table.hideTurnMarker();
-            let winner = players.find(player => player.score >= Constants_1.WIN_SCORE);
-            screenManager.showGameOver(winner, roundCounter);
+            players.sort((a, b) => {
+                if (a.score > b.score)
+                    return -1;
+                else if (a.score < b.score)
+                    return 1;
+                else
+                    return 0;
+            });
+            screenManager.showGameOver(players[0], roundCounter);
             createjs.Sound.play("gameOver");
             break;
     }

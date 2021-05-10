@@ -220,8 +220,13 @@ function onGameEvent(e:createjs.Event):void {
             break;
         case "showGameOver":
             table.hideTurnMarker();
-            let winner:Player = players.find(player => player.score >= WIN_SCORE);
-            screenManager.showGameOver(winner, roundCounter);
+            // find winner with greatest score
+            players.sort((a:Player, b:Player) => {
+                if (a.score > b.score) return -1;
+                else if (a.score < b.score) return 1;
+                else return 0;
+            });
+            screenManager.showGameOver(players[0], roundCounter);
             createjs.Sound.play("gameOver");
             break;
     }
